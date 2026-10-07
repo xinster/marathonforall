@@ -14,8 +14,8 @@
 
 - 收录 **60 场**:24 场马拉松 / 路跑 + 36 场全球越野赛(2026–2027 赛季)
 - 形态:**零构建纯静态网站** + **零依赖 Node 脚本**(每日巡检与邮件)
-- 线上:`https://marathon-tracker.app.workbuddy.host/`
-- 仓库:`https://github.com/xinster/marathonforall`
+- 线上:`https://marathon-tracker.app.workbuddy.host/`(发布方式见 `docs/OPERATIONS.md` §3)
+- 仓库:`https://github.com/xinster/marathonforall`(**保留所有权利,非开源**,见 `LICENSE`)
 
 ### 它不做什么(想清楚了才做的决定)
 
@@ -47,10 +47,22 @@ node tools/digest.js
 
 # 4. 跑测试 —— 应输出 "83 通过 / 0 失败"
 node tests/regression.js
+
+# 5. 一键自检(语法 + 回归 + 巡检冒烟 + 隐私守卫)
+sh scripts/check.sh
 ```
 
 个人数据存在浏览器 `localStorage`,同时可由 `tools/digest.js` 从
 `data/marathon_watchlist.json` 读取用于发信。
+
+### 深入一点
+
+| 想知道 | 看 |
+|---|---|
+| 架构为什么不许改、状态机 15 态、改代码红线 | **本文(§3 / §4 / §11)** |
+| 每天怎么自动跑、网站怎么发布、赛历数据怎么改 | `docs/OPERATIONS.md` |
+| 邮件通道怎么接、报错怎么查 | `docs/MAIL_SETUP.md` |
+| 为什么当初这么做、踩过哪些坑 | `docs/WORKLOG.md` |
 
 ---
 
@@ -100,13 +112,18 @@ marathon-platform/           ★ 产品,线上部署目录
   README.md                  详细设计与架构说明
 tools/
   digest.js                  每日巡检:算状态 → Markdown / HTML 邮件 / 紧急清单
-  notify.js                  巡检 + 推送(有紧急项才发信)
+  notify.js                  巡检 + 推送(有紧急项才发信;需外部发信 CLI)
 tests/regression.js          83 项断言,任意克隆可跑
 data/
   marathon_watchlist.example.json   入库模板(无个人数据)
   marathon_watchlist.json           活的关注清单 —— 已 gitignore,含个人档案
-docs/                        WORKLOG.md + HANDOVER.md
+docs/
+  HANDOVER.md                本文
+  WORKLOG.md                 工程记录
+  OPERATIONS.md              日常运行:巡检调度 / 网站发布 / 数据维护
+  MAIL_SETUP.md              邮件通道接入与故障排查
 legacy/                      历史产物,见 legacy/README.md
+scripts/check.sh             一键自检:语法 / 回归 / 巡检冒烟 / 隐私守卫
 ```
 
 **依赖顺序固定:`engine.js → store.js → app.js`。三者都不需要构建步骤。**
@@ -209,7 +226,7 @@ legacy/                      历史产物,见 legacy/README.md
 | 赛事日期 | 大量日期是**按往年推算**(`confidence: "projected"`),不是官方公告 | UI 全程显示可信度标签;对外一律声明「以官方公告为准」 |
 | `data/marathon_watchlist.json` | 含个人档案(姓名 / 身份证号 / 手机号) | **已 gitignore**。入库的只有 `.example.json` 模板。见下节 |
 | 本机 Git 凭据 | 无凭据助手,`git push` 每次都要 token | 见 §8 |
-| 邮件链路 | 依赖外部 Agent Mail CLI 的授权状态 | 授权失效时报错会提示重新授权 |
+| 邮件链路 | 依赖外部 CLI(默认 `agently-cli`)的**授权有效期**;过期后 `notify.js` 会退出码 `11` | 提示里直接给了重新授权命令;接入方式与排查表见 `docs/MAIL_SETUP.md` |
 | 无头浏览器截图 | 本沙箱**不可用**(见 WORKLOG §11) | 验证 UI 一律用 DOM 存根回归 |
 
 ---
@@ -217,7 +234,7 @@ legacy/                      历史产物,见 legacy/README.md
 ## 7. 隐私设计(别破坏它)
 
 ```
-data/marathon_watchlist.example.json   ← 入库。34 字段全空,无个人数据
+data/marathon_watchlist.example.json   ← 入库。33 个档案字段全空(+1 个 `_说明` 注释键),无个人数据
 data/marathon_watchlist.json           ← gitignore。活的,含个人档案
 ```
 
@@ -243,20 +260,19 @@ git diff --cached | grep -nE "ghp_|@|身份证"   # 粗筛 token / 邮箱
 
 ## 8. 推送代码
 
-仓库已配好 remote,但**本机没有存储任何 Git 凭据**,所以:
+如果你克隆后 `git push` 提示要凭据,用下面任一条路解决(**本项目不在仓库里存任何凭据**):
 
 ```bash
-git add -A && git commit -m "..." && git push     # 会要凭据
+git add -A && git commit -m "..." && git push     # 没有凭据助手时会询问
 ```
 
-两条路:
-
 - **用 token**:GitHub → Settings → Developer settings → Personal access tokens →
-  **Tokens (classic)** → 勾 `repo` 即可(创建仓库 + 推送都够)。用完立刻吊销
-- **在自己终端推**:本机 `gh` CLI 不存在,直接 `git push` 也行
+  **Tokens (classic)** → 勾 `repo`。用完立刻吊销
+- **用 `gh` CLI**:`gh auth login` 一次,之后 `git push` 走同一套凭据
+- **SSH**:改用 `git@github.com:xinster/marathonforall.git`,配好 key 即可
 
-> 坑:首次 push 可能报 `CONNECT tunnel failed, response 502` —— 那是沙箱代理隧道偶发失败,
-> **原样重试一次即可**,不是凭据问题,不要重配 proxy。
+> 坑:若首次 push 报 `CONNECT tunnel failed, response 502` —— 那是**出网代理隧道偶发失败**,
+> **原样重试一次即可**。不是凭据问题,不要重配 proxy,也不要改用 API 兜底。
 
 ---
 
@@ -264,7 +280,12 @@ git add -A && git commit -m "..." && git push     # 会要凭据
 
 ### 待办
 
-- [ ] **`LICENSE` 未定** —— 公开仓库目前无授权条款。需决策:MIT / Apache-2.0 / 保留所有权利
+- [x] **`LICENSE` 已定:保留所有权利(非开源)** —— 见仓库根 `LICENSE`。
+      将来若要开源,只需替换该文件并删掉 README「许可」一节中的限制说明
+- [x] **一键自检已加** —— `sh scripts/check.sh`:语法 + 83 项断言 + 巡检冒烟 + 隐私守卫
+- [ ] **(可选)接 GitHub Actions** —— 想让 push 时自动跑同批检查的话,
+      需要带 `workflow` 权限的令牌(只有 `repo` 会被 GitHub 拒收)。
+      脚本 `scripts/check.sh` 已经就绪,套一层 workflow 即可
 - [ ] 微信小程序:需要 AppID 与资质,且必须**新建小程序应用重新构建**(不能从 HTML 转换)
 - [ ] 接后端:走 `assets/store.js` 的 `[SEAM]`;注意网站与小程序是两个独立云环境
 - [ ] `tests/regression.js` 的防漂移基线:理想做法是把当前基线**冻结成 JSON 快照**,
@@ -288,21 +309,33 @@ git add -A && git commit -m "..." && git push     # 会要凭据
 接手后跑一遍,全绿就算环境没问题:
 
 ```bash
-node tests/regression.js                  # 期望:83 通过 / 0 失败
-node tools/digest.js                      # 期望:生成 reports/ 下三个文件
-node tools/digest.js --date 2026-10-07    # 期望:有「待缴费」等紧急项
-cp data/marathon_watchlist.example.json data/marathon_watchlist.json  # 首次才需要
+node tests/regression.js                      # 期望:83 通过 / 0 失败
+node tools/digest.js                          # 期望:退出码 0,reports/ 下三个文件
+node tools/digest.js --date 2026-10-07T17:30  # 指定日期+时刻,便于复现
+cp data/marathon_watchlist.example.json data/marathon_watchlist.json   # 首次才需要
 ```
+
+> ⚠️ **`--date` 的语义**:只写日期(如 `--date 2026-10-07`)时**固定按当天 09:00 计算**;
+> 不带 `--date` 则用**真实当前时间**。同一天若有小时级事件(如「14:00 公布抽签」),
+> 两者结果会不同。要复现线上行为,**带上时刻**。
+>
+> 另外:**摘要内容随日期变化**,不要拿某一天的紧急项条数当作验收标准 ——
+> 只要退出码为 0、三个文件都生成,管线就是通的。
 
 | 检查项 | 期望 |
 |---|---|
 | `node tests/regression.js` | `83 通过 / 0 失败` |
 | `tools/digest.js` 退出码 | `0` |
 | 两个数据文件都缺失时 | 退出码 `4` + 明确指引 |
-| 只有模板时 | 退出码 `0` + 告警 |
+| 只有模板时(新克隆的默认状态) | 退出码 `0` + 一条告警 |
+| `notify.js` 找不到发信 CLI | 退出码 `10` + 指引;此时用 `digest.js` 一样能拿结论 |
+| `notify.js` 授权失效 | 退出码 `11` + 提示重新授权 |
 | `git status` | 干净(或只有预期的改动) |
 | `git ls-files` 不含 | `.workbuddy/` · `reports/` · `AGENT_MAIL_SETUP.md` · 活的 watchlist |
 | 线上站点 | 200,且 `#kindTabs` / `#mineKind` / `#kindBar` 齐备 |
+
+`sh scripts/check.sh` 会把上面这几项一次跑完(语法 / 回归 / 巡检冒烟 / 隐私守卫),
+全绿则退出码 0。**改动代码后跑它就够了。**
 
 ---
 

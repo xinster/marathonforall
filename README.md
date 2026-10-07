@@ -39,9 +39,13 @@
 │   ├── marathon_watchlist.example.json  入库模板(不含个人数据)
 │   └── marathon_watchlist.json          你的关注清单 —— 已 gitignore,自行创建
 ├── docs/
+│   ├── HANDOVER.md               交接必读:架构、状态机、已知脆弱点、改代码红线
 │   ├── WORKLOG.md                工程记录:每个阶段的决策、踩的坑、怎么验证的
-│   └── HANDOVER.md               交接文档:架构、状态机、红线、待办
+│   ├── MAIL_SETUP.md             邮件通道怎么接、坏了怎么排查
+│   └── OPERATIONS.md             每日巡检怎么长期跑、网站怎么发布、数据怎么改
 ├── legacy/                       历史产物(其中一个被测试当作基线,勿删,见 legacy/README.md)
+├── scripts/check.sh              一键自检:语法 / 回归 / 巡检冒烟 / 隐私守卫(零权限要求)
+├── LICENSE                       保留所有权利(公开可见,但非开源)
 └── README.md
 ```
 
@@ -69,7 +73,16 @@ node tools/notify.js --force       # 无紧急事项也发
 
 # 5. 测试(零依赖,期望 "83 通过 / 0 失败")
 node tests/regression.js
+
+# 6. 一键自检(语法 + 回归 + 巡检冒烟 + 隐私守卫,四合一)
+sh scripts/check.sh
 ```
+
+> **第 4 步需要先接一条邮件通道** —— 本项目零依赖,不内置 SMTP 客户端,发信交给外部 CLI。
+> 没有通道时用第 3 步即可拿到全部结论(摘要同样写到 `reports/`)。
+> 接入方法见 [`docs/MAIL_SETUP.md`](docs/MAIL_SETUP.md)。
+>
+> 想让巡检每天自动跑,见 [`docs/OPERATIONS.md`](docs/OPERATIONS.md)。
 
 ---
 
@@ -113,9 +126,11 @@ node tests/regression.js
 仓库**不包含**个人档案数据、每日巡检输出与邮箱配置(见 `.gitignore`)。
 
 ```
-data/marathon_watchlist.example.json   ← 入库的模板,34 个字段全为空
+data/marathon_watchlist.example.json   ← 入库的模板,33 个档案字段全为空
 data/marathon_watchlist.json           ← 你的实际文件,已被 gitignore 排除
 ```
+
+> 模板的 `profile` 下有 34 个键 = **33 个档案字段** + 1 个 `_说明` 注释键。
 
 档案里有姓名 / 身份证号 / 手机号这类字段,所以**活的文件刻意不入库** ——
 这样即使哪天你填了真值,`git push` 也不可能把它带上去。
@@ -125,10 +140,14 @@ data/marathon_watchlist.json           ← 你的实际文件,已被 gitignore �
 
 ## 工程记录与交接
 
+- [`docs/HANDOVER.md`](docs/HANDOVER.md) —— **接手先看这份**:架构不变量、15 态状态机、已知脆弱点、改代码的红线
 - [`docs/WORKLOG.md`](docs/WORKLOG.md) —— 怎么走到今天的:每个阶段的决策依据、踩过的坑、怎么验证的
-- [`docs/HANDOVER.md`](docs/HANDOVER.md) —— 接手必读:架构不变量、15 态状态机、已知脆弱点、改代码的红线
+- [`docs/OPERATIONS.md`](docs/OPERATIONS.md) —— 巡检怎么长期跑、网站怎么发布、赛历数据怎么改
+- [`docs/MAIL_SETUP.md`](docs/MAIL_SETUP.md) —— 邮件通道接入与故障排查
 - [`legacy/README.md`](legacy/README.md) —— 历史产物的角色说明(其中一个被测试当作基线,**勿删**)
 
 ## 许可
 
-尚未指定许可证。在你决定之前,默认保留所有权利。
+**保留所有权利,非开源。** 仓库公开可见,但未授予任何使用、修改或分发许可 ——
+详见 [`LICENSE`](LICENSE)。如需授权请另行联系。
+

@@ -37,18 +37,29 @@ const DRY = has("--dry-run");
 const FORCE = has("--force");
 const DATE_ARG = val("--date", null);
 
-/* ---------- 定位 CLI ---------- */
+/* ---------- 定位发信 CLI ----------
+   本项目零依赖,不内置 SMTP 客户端:发信交给外部 CLI。
+   查找顺序:AGENTLY_CLI 环境变量 → PATH → 若干常见安装位置。
+   只要你的 CLI 支持 `+me`(返回发件别名)与发信子命令即可替换。
+   完整说明见 docs/MAIL_SETUP.md */
+const CLI_NAME = "agently-cli";
 function findCli() {
-  const cands = [
-    process.env.AGENTLY_CLI,
-    "/Users/xinster/.workbuddy/binaries/node/workspace/node_modules/.bin/agently-cli",
-    path.join(process.env.HOME || "", ".workbuddy/binaries/node/workspace/node_modules/.bin/agently-cli"),
-  ].filter(Boolean);
+  const home = process.env.HOME || process.env.USERPROFILE || "";
+  const cands = [];
+  if (process.env.AGENTLY_CLI) cands.push(process.env.AGENTLY_CLI);
+  if (home) {
+    cands.push(path.join(home, ".workbuddy/binaries/node/workspace/node_modules/.bin", CLI_NAME));
+    cands.push(path.join(home, ".local/bin", CLI_NAME));
+  }
+  cands.push("/usr/local/bin/" + CLI_NAME, "/opt/homebrew/bin/" + CLI_NAME);
   for (const c of cands) { try { if (fs.existsSync(c)) return c; } catch (e) {} }
-  const w = spawnSync("which", ["agently-cli"], { encoding: "utf-8" });
-  if (w.status === 0) return w.stdout.trim();
-  console.error("找不到 agently-cli。请设置 AGENTLY_CLI 环境变量,或先安装:");
-  console.error("  cd ~/.workbuddy/binaries/node/workspace && npm install @tencent-qqmail/agently-cli");
+  const w = spawnSync("which", [CLI_NAME], { encoding: "utf-8" });
+  if (w.status === 0 && w.stdout.trim()) return w.stdout.trim();
+  console.error("找不到发信 CLI(" + CLI_NAME + ")。三种解决办法:");
+  console.error("  1) 指定路径  AGENTLY_CLI=/path/to/" + CLI_NAME + " node tools/notify.js");
+  console.error("  2) 装进 PATH  npm install -g @tencent-qqmail/" + CLI_NAME);
+  console.error("  3) 不发信也行  node tools/digest.js  —— 摘要同样会写到 reports/");
+  console.error("  详见 docs/MAIL_SETUP.md");
   process.exit(10);
 }
 const CLI = findCli();
@@ -101,13 +112,28 @@ console.log("[2/3] 收件人解析…");
 let TO = process.env.DIGEST_TO;
 if (!TO) {
   const me = spawnSync(CLI, ["+me"], { encoding: "utf-8", cwd: ROOT });
+  let raw = null;
+  try { raw = JSON.parse(me.stdout); } catch (e) {}
+  /* 授权失效要与「没有别名」区分开:前者需要重新授权,后者只是配置问题。
+     混为一谈会让使用者在错的方向上排查半天。 */
+  if (raw && raw.ok === false) {
+    const why = (raw.error && (raw.error.type || raw.error.message)) || "未知错误";
+    console.error("发信通道授权失效(" + why + ")。两条路:");
+    console.error("  1) 重新授权   " + CLI_NAME + " auth login");
+    console.error("  2) 临时绕过   DIGEST_TO=you@example.com node tools/notify.js");
+    process.exit(11);
+  }
   try {
-    const d = JSON.parse(me.stdout).data;
+    const d = raw.data;
     const p = (d.aliases || []).find(a => a.is_primary) || (d.aliases || [])[0];
     TO = p && p.email;
   } catch (e) {}
 }
-if (!TO) { console.error("无法确定收件地址(agently-cli +me 未返回别名)。请设置 DIGEST_TO。"); process.exit(13); }
+if (!TO) {
+  console.error("无法确定收件地址(" + CLI_NAME + " +me 未返回别名)。请显式指定:");
+  console.error("  DIGEST_TO=you@example.com node tools/notify.js");
+  process.exit(13);
+}
 console.log("       收件人: " + TO);
 
 console.log("[3/3] 发送…");

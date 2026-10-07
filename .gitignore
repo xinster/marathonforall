@@ -20,3 +20,9 @@ node_modules/
 *.log
 .env
 .env.*
+
+# ===== Python(文档里的 `python3 -m http.server` 起静态服务)=====
+__pycache__/
+*.py[cod]
+.venv/
+venv/
