@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>马拉松报名指挥中心</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --panel:#fff; --ink:#1b1f27; --ink2:#4a5262; --ink3:#8b94a6;
+    --line:#e5e8ee; --line2:#f0f2f6;
+    --red:#c0392b; --red-bg:#fdecea; --red-line:#f6d5d1;
+    --amber:#b8860b; --amber-bg:#fdf6e3; --amber-line:#f0e2b8;
+    --teal:#0f7b6c; --teal-bg:#e6f4f1; --teal-line:#cfe9e3;
+    --blue:#2f5fa8; --blue-bg:#eaf0fa; --blue-line:#d6e1f4;
+    --purple:#7d3c98; --purple-bg:#f4ecf9; --purple-line:#e6d9f0;
+    --grey:#7a7f8c; --grey-bg:#eef0f3; --grey-line:#e0e3e8;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.6;
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1140px;margin:0 auto;padding:32px 22px 80px;}
+  button,input,select,textarea{font:inherit;}
+
+  /* ---------- header ---------- */
+  header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;
+    border-bottom:2px solid var(--ink);padding-bottom:16px;margin-bottom:18px;flex-wrap:wrap;}
+  h1{font-size:26px;margin:0;letter-spacing:-.4px;line-height:1.25;}
+  h1 small{display:block;font-size:13px;font-weight:400;color:var(--ink3);margin-top:5px;letter-spacing:0;}
+  .today{font-size:12px;color:var(--ink3);text-align:right;line-height:1.7;}
+  .today b{color:var(--ink2);}
+
+  /* ---------- tabs ---------- */
+  .tabs{display:flex;gap:6px;margin-bottom:22px;flex-wrap:wrap;}
+  .tabs button{background:transparent;border:1px solid transparent;border-bottom:2px solid transparent;
+    padding:8px 15px;border-radius:7px 7px 0 0;color:var(--ink2);cursor:pointer;font-size:14px;}
+  .tabs button:hover{color:var(--ink);background:#eceef2;}
+  .tabs button.on{color:var(--ink);font-weight:600;background:var(--panel);
+    border-color:var(--line);border-bottom-color:var(--panel);box-shadow:0 -1px 0 var(--line);}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:20px 22px;margin-bottom:18px;}
+  .panel h2{font-size:15px;margin:0 0 14px;padding-left:10px;border-left:3px solid var(--ink);
+    display:flex;justify-content:space-between;align-items:center;gap:12px;}
+  .panel h2 .r{font-size:12px;font-weight:400;color:var(--ink3);border:0;}
+
+  /* ---------- KPI ---------- */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin-bottom:18px;}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 15px;}
+  .kpi .n{font-size:23px;font-weight:700;letter-spacing:-.5px;line-height:1.25;}
+  .kpi .l{font-size:12px;color:var(--ink3);}
+  .kpi.alert{border-color:var(--red-line);background:var(--red-bg);}
+  .kpi.alert .n{color:var(--red);}
+  .kpi.warn{border-color:var(--amber-line);background:var(--amber-bg);}
+  .kpi.warn .n{color:var(--amber);}
+
+  /* ---------- badges ---------- */
+  .badge{display:inline-block;font-size:11px;line-height:1.55;padding:1px 8px;border-radius:999px;
+    font-weight:600;border:1px solid transparent;white-space:nowrap;}
+  .s-pay{background:var(--red-bg);color:var(--red);border-color:var(--red-line);}
+  .s-closing{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-line);}
+  .s-open{background:var(--teal-bg);color:var(--teal);border-color:var(--teal-line);}
+  .s-soon{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-line);}
+  .s-wait{background:var(--purple-bg);color:var(--purple);border-color:var(--purple-line);}
+  .s-idle{background:var(--grey-bg);color:var(--grey);border-color:var(--grey-line);}
+  .tier{background:#fafbfc;color:var(--ink2);border-color:var(--line);}
+  .conf{font-size:10px;padding:0 6px;border-radius:4px;border:1px solid var(--line);
+    background:#fafbfc;color:var(--ink3);font-weight:500;}
+
+  /* ---------- race card ---------- */
+  .race{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:10px;background:var(--panel);
+    border-left-width:4px;transition:.15s;}
+  .race:hover{box-shadow:0 2px 10px rgba(20,30,60,.06);}
+  .race.u-red{border-left-color:var(--red);} .race.u-amber{border-left-color:var(--amber);}
+  .race.u-teal{border-left-color:var(--teal);} .race.u-blue{border-left-color:var(--blue);}
+  .race.u-purple{border-left-color:var(--purple);} .race.u-grey{border-left-color:#cbd0d9;}
+  .race.done{opacity:.62;}
+  .r-top{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;}
+  .r-name{font-size:15px;font-weight:600;line-height:1.4;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .r-meta{font-size:12px;color:var(--ink3);margin-top:3px;}
+  .r-state{text-align:right;min-width:130px;}
+  .r-cd{font-size:13px;font-weight:600;margin-top:5px;}
+  .r-cd small{font-weight:400;color:var(--ink3);}
+  .r-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:6px 18px;
+    margin-top:11px;padding-top:11px;border-top:1px dashed var(--line);font-size:12.5px;}
+  .r-grid div{color:var(--ink3);}
+  .r-grid b{color:var(--ink2);font-weight:600;}
+  .r-note{margin-top:9px;font-size:12.5px;color:var(--ink2);background:#fafbfc;border:1px solid var(--line2);
+    border-radius:7px;padding:8px 11px;line-height:1.65;}
+  .r-note.warn{background:var(--amber-bg);border-color:var(--amber-line);color:#7a5a08;}
+  .r-acts{display:flex;gap:7px;margin-top:11px;flex-wrap:wrap;}
+  .btn{font-size:12.5px;padding:6px 13px;border-radius:7px;border:1px solid var(--line);background:#fff;
+    color:var(--ink2);cursor:pointer;transition:.14s;white-space:nowrap;}
+  .btn:hover{border-color:#b9c0cc;color:var(--ink);background:#fafbfc;}
+  .btn.pri{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600;}
+  .btn.pri:hover{background:#2b3240;}
+  .btn.danger{color:var(--red);border-color:var(--red-line);}
+  .btn.danger:hover{background:var(--red-bg);}
+  .btn.sm{font-size:11.5px;padding:4px 10px;}
+
+  /* ---------- forms ---------- */
+  fieldset{border:1px solid var(--line);border-radius:9px;padding:14px 16px;margin:0 0 16px;}
+  legend{font-size:12px;font-weight:700;color:var(--ink2);padding:0 7px;letter-spacing:.5px;}
+  .fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;}
+  .f{display:flex;flex-direction:column;gap:4px;}
+  .f label{font-size:12px;color:var(--ink3);}
+  .f input,.f select,.f textarea{border:1px solid var(--line);border-radius:7px;padding:7px 10px;
+    background:#fff;color:var(--ink);font-size:13px;width:100%;}
+  .f input:focus,.f select:focus,.f textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(47,95,168,.1);}
+  .f.full{grid-column:1/-1;}
+  .hint{font-size:11.5px;color:var(--ink3);line-height:1.6;}
+
+  table.t{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px;}
+  table.t th{text-align:left;font-size:11px;color:var(--ink3);font-weight:600;padding:7px 9px;
+    border-bottom:1px solid var(--line);text-transform:uppercase;letter-spacing:.5px;}
+  table.t td{padding:6px 9px;border-bottom:1px solid var(--line2);}
+  table.t tr:last-child td{border-bottom:none;}
+
+  /* ---------- checklist ---------- */
+  .chk{display:flex;align-items:flex-start;gap:9px;padding:7px 0;border-bottom:1px solid var(--line2);font-size:13px;}
+  .chk:last-child{border-bottom:none;}
+  .chk input{margin-top:3px;flex:none;}
+  .chk.on span{text-decoration:line-through;color:var(--ink3);}
+  .chk .why{display:block;font-size:11.5px;color:var(--ink3);line-height:1.55;}
+
+  /* ---------- misc ---------- */
+  .row{display:flex;gap:9px;flex-wrap:wrap;align-items:center;}
+  .sp{flex:1;}
+  .empty{text-align:center;color:var(--ink3);padding:34px 10px;font-size:13px;}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#fff;padding:11px 20px;border-radius:9px;font-size:13px;
+    opacity:0;pointer-events:none;transition:.25s;z-index:99;max-width:90vw;box-shadow:0 8px 26px rgba(0,0,0,.24);}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+  .filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+  .filters button{font-size:12.5px;padding:5px 13px;border-radius:999px;border:1px solid var(--line);
+    background:var(--panel);color:var(--ink2);cursor:pointer;}
+  .filters button:hover{border-color:#c3c9d4;color:var(--ink);}
+  .filters button.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600;}
+  .callout{border:1px solid var(--amber-line);background:var(--amber-bg);color:#6b4f07;
+    border-radius:9px;padding:13px 16px;font-size:12.5px;line-height:1.75;margin-bottom:16px;}
+  .callout b{color:#5a4106;}
+  .callout.blue{border-color:var(--blue-line);background:var(--blue-bg);color:#26456f;}
+  .callout.blue b{color:#1c3454;}
+  .modal{position:fixed;inset:0;background:rgba(18,22,30,.5);display:none;align-items:center;
+    justify-content:center;z-index:100;padding:20px;}
+  .modal.on{display:flex;}
+  .modal .box{background:#fff;border-radius:12px;max-width:620px;width:100%;max-height:86vh;
+    overflow:auto;padding:22px 24px;}
+  .hidden{display:none!important;}
+  code.k{background:#f2f4f7;border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+    font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  @media(max-width:720px){
+    .wrap{padding:22px 14px 60px;}
+    h1{font-size:20px;}
+    .r-state{text-align:left;min-width:0;}
+    .today{text-align:left;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>马拉松报名指挥中心
+      <small>档案 · 窗口监控 · 一键就绪 · 截止提醒 —— 一个人跑完整个报名季</small>
+    </h1>
+    <div class="today">
+      <b id="todayLabel">—</b><br>
+      <span id="syncLabel">本地存储 · 数据不出本机</span>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button data-tab="dash" class="on">指挥台</button>
+    <button data-tab="profile">我的档案</button>
+    <button data-tab="data">数据与边界</button>
+  </div>
+
+  <!-- ==================== 指挥台 ==================== -->
+  <section id="tab-dash">
+    <div class="callout blue" id="actionBanner"></div>
+
+    <div class="kpis" id="kpis"></div>
+
+    <div class="panel">
+      <h2>赛事待办清单 <span class="r" id="listCount"></span></h2>
+      <div class="filters" id="filters">
+        <button data-f="action" class="on">需要行动</button>
+        <button data-f="all">全部</button>
+        <button data-f="open">报名中</button>
+        <button data-f="pay">待缴费</button>
+        <button data-f="wait">待抽签</button>
+        <button data-f="closed">已截止</button>
+      </div>
+      <div id="raceList"></div>
+    </div>
+
+    <div class="panel">
+      <h2>批量工具 <span class="r">把关键日期落到你的日历 / 邮箱里</span></h2>
+      <div class="row">
+        <button class="btn pri" id="icsBtn">导出全部关键日期到日历 (.ics)</button>
+        <button class="btn" id="notifBtn">开启浏览器到期提醒</button>
+        <button class="btn" id="addRaceBtn">手动添加赛事</button>
+        <button class="btn" id="resetBtn">恢复种子数据</button>
+      </div>
+      <p class="hint" style="margin-top:12px">
+        .ics 文件导入手机/电脑日历后,报名开始、报名截止、抽签公布、缴费截止、比赛日都会自动生成提醒 ——
+        这是目前最可靠、且完全合规的「不错过窗口」方案。
+      </p>
+    </div>
+  </section>
+
+  <!-- ==================== 档案 ==================== -->
+  <section id="tab-profile" class="hidden">
+    <div class="callout">
+      <b>这份档案就是「一键报名」的数据源。</b>填好后,在任何赛事的报名页点「复制报名资料」,
+      即可把身份信息、联系方式、紧急联系人、尺码等一次性粘贴进报名表单,不用再来回翻身份证和旧成绩单。
+    </div>
+
+    <div class="panel">
+      <h2>基本信息</h2>
+      <div class="fgrid">
+        <div class="f"><label>姓名(与证件一致)</label><input id="p_name" placeholder="张三"></div>
+        <div class="f"><label>英文名 / 护照拼音</label><input id="p_nameEn" placeholder="ZHANG SAN"></div>
+        <div class="f"><label>性别</label><select id="p_gender"><option value="">—</option><option>男</option><option>女</option></select></div>
+        <div class="f"><label>出生日期</label><input id="p_birth" type="date"></div>
+        <div class="f"><label>证件类型</label><select id="p_idType"><option>身份证</option><option>护照</option><option>港澳居民来往内地通行证</option><option>台湾居民来往大陆通行证</option><option>其他</option></select></div>
+        <div class="f"><label>证件号码</label><input id="p_idNo" placeholder="报名必填"></div>
+        <div class="f"><label>手机号</label><input id="p_phone" placeholder="接收验证码 / 通知"></div>
+        <div class="f"><label>常用邮箱</label><input id="p_email" placeholder="接收抽签结果"></div>
+        <div class="f"><label>常住城市</label><input id="p_city" placeholder="便于判断交通与住宿"></div>
+        <div class="f"><label>国家 / 地区</label><input id="p_country" value="中国"></div>
+        <div class="f"><label>血型</label><select id="p_blood"><option value="">—</option><option>A</option><option>B</option><option>O</option><option>AB</option><option>不详</option></select></div>
+        <div class="f"><label>参赛服尺码</label><select id="p_shirt"><option value="">—</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></select></div>
+        <div class="f"><label>鞋码(EU)</label><input id="p_shoe" placeholder="42"></div>
+        <div class="f"><label>是否愿意异地参赛</label><select id="p_travel"><option>愿意</option><option>仅限常住地</option><option>看赛事</option></select></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>紧急联系人</h2>
+      <div class="fgrid">
+        <div class="f"><label>姓名</label><input id="p_ecName" placeholder="李四"></div>
+        <div class="f"><label>关系</label><input id="p_ecRel" placeholder="配偶 / 父母 / 朋友"></div>
+        <div class="f"><label>电话</label><input id="p_ecPhone" placeholder="+86 ..."></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>成绩与资质 <span class="r">决定你能不能走直通/达标通道</span></h2>
+      <div class="fgrid">
+        <div class="f"><label>全马最好成绩</label><input id="p_pbFull" placeholder="3:28:15"></div>
+        <div class="f"><label>该成绩赛事</label><input id="p_pbFullRace" placeholder="2026 杭州马拉松"></div>
+        <div class="f"><label>该成绩日期</label><input id="p_pbFullDate" type="date"></div>
+        <div class="f"><label>半马最好成绩</label><input id="p_pbHalf" placeholder="1:38:40"></div>
+        <div class="f"><label>该成绩赛事</label><input id="p_pbHalfRace" placeholder="2026 苏州马拉松(半程)"></div>
+        <div class="f"><label>该成绩日期</label><input id="p_pbHalfDate" type="date"></div>
+        <div class="f"><label>体检报告日期</label><input id="p_medDate" type="date"></div>
+        <div class="f"><label>体检报告有效期(月)</label><input id="p_medMonths" type="number" value="12" min="1" max="36"></div>
+        <div class="f"><label>完赛证书存放位置</label><input id="p_certPlace" placeholder="云端文件夹 / 电脑路径"></div>
+      </div>
+      <p class="hint" style="margin-top:12px" id="qualHint"></p>
+    </div>
+
+    <div class="panel">
+      <h2>报名偏好</h2>
+      <div class="fgrid">
+        <div class="f"><label>单场预算(元)</label><input id="p_budget" type="number" placeholder="2000"></div>
+        <div class="f"><label>可接受最远距离</label><select id="p_radius"><option>国内任意</option><option>亚洲</option><option>全球</option><option>仅周边城市</option></select></div>
+        <div class="f full"><label>其他备注(会出现在复制出的报名资料尾部)</label><textarea id="p_notes" rows="2" placeholder="如:不接受早晨 6 点前起跑的赛事 / 需要轮椅无障碍通道"></textarea></div>
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn pri" id="saveProfile">保存档案</button>
+      <button class="btn" id="copyProfile">复制报名资料到剪贴板</button>
+      <span class="hint" id="profSaved"></span>
+    </div>
+  </section>
+
+  <!-- ==================== 数据与边界 ==================== -->
+  <section id="tab-data" class="hidden">
+    <div class="callout">
+      <b>关于「自动提交报名」—— 为什么不做,以及我做了什么替代方案。</b>
+      这不是偷懒,是技术上和合规上都走不通的路:
+    </div>
+
+    <div class="panel">
+      <h2>三道硬墙</h2>
+      <table class="t">
+        <thead><tr><th style="width:150px">障碍</th><th>具体情况</th><th style="width:180px">对「自动提交」的影响</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><b>实名认证</b></td>
+            <td>中国大陆赛事必须绑定身份证做实名核验;境外赛事需要护照信息与支付通道绑定。部分赛事还要求人脸识别。</td>
+            <td>无法在无人参与的情况下完成身份核验</td>
+          </tr>
+          <tr>
+            <td><b>验证码 / 风控</b></td>
+            <td>图形验证码、滑块验证、短信验证码、设备指纹。这是赛事组委会专门用来拦截机器人的设计。</td>
+            <td>绕过它等于违反赛事服务条款,账号会被封禁、名额会被取消</td>
+          </tr>
+          <tr>
+            <td><b>抽签制</b></td>
+            <td>中国绝大多数赛事(上马、北马、广马、福马…)和所有大满贯都是「预报名 → 抽签 → 中签 → 缴费」。<br>报名先后顺序<b>完全不影响中签率</b>。</td>
+            <td>「抢在开放瞬间提交」这件事本身就是伪需求 —— 只有少数先到先得的赛事例外</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="hint" style="margin-top:13px">
+        <b>真正会丢名额的环节,不是「没抢到报名」,而是「中签后忘记缴费」。</b>
+        例如 2027 渣打香港马拉松:第一轮中签者只有 7 天付款期(9/25–10/2),第二轮只有 3 天(10/7–10/10)。
+        绝大多数被释放的名额,都死在这个环节上 —— 这才是本系统重点盯防的对象。
+      </p>
+    </div>
+
+    <div class="panel">
+      <h2>所以本系统做的是这四件事</h2>
+      <table class="t">
+        <thead><tr><th style="width:170px">能力</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><b>窗口监控</b></td><td>对每场赛事实时计算状态:未开放 / 即将开放 / 报名中 / 即将截止 / 待抽签 / 待缴费 / 已截止,并给出倒计时与紧迫度排序。</td></tr>
+          <tr><td><b>资料一键就绪</b></td><td>档案一次填好,任意赛事页一键复制「报名资料块」,直接粘贴进表单。</td></tr>
+          <tr><td><b>截止前主动提醒</b></td><td>导出 .ics 日历事件到手机(报名开放日、截止日、抽签日、缴费截止日、比赛日),或由每日自动化任务发邮件告警。</td></tr>
+          <tr><td><b>材料清单核验</b></td><td>按赛事规则生成所需材料清单(参赛经历、体检报告有效期、直通资格),缺项在卡片上直接标红。</td></tr>
+        </tbody>
+      </table>
+      <p class="hint" style="margin-top:13px">
+        如果确实需要「半自动填表」,可以配合浏览器自动化工具打开报名页帮你把能填的都填上,
+        但最后一步的验证码和「提交」按钮,仍然需要你本人点击 —— 这一步不该被自动化,也不该被自动化。
+      </p>
+    </div>
+
+    <div class="panel">
+      <h2>数据管理</h2>
+      <div class="row">
+        <button class="btn pri" id="exportBtn">导出数据 (.json)</button>
+        <button class="btn" id="importBtn">导入数据 (.json)</button>
+        <button class="btn danger" id="clearBtn">清空本机数据</button>
+        <input type="file" id="importFile" accept=".json" class="hidden">
+      </div>
+      <p class="hint" style="margin-top:12px">
+        所有数据只存在这台设备的浏览器本地存储里,不上传任何服务器。
+        导出的 .json 可以交给每日自动化任务,由它扫描窗口变化并给你发邮件告警。
+        建议同时另存一份到 <code class="k">data/</code> 目录做备份。
+      </p>
+    </div>
+  </section>
+
+</div>
+
+<div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   0. 工具
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.prototype.slice.call(document.querySelectorAll(s));
+const LS_KEY = "marathon_registrar_v1";
+const MS_DAY = 86400000;
+
+function parseDT(s){
+  if(!s) return null;
+  const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?$/);
+  if(!m) return null;
+  return new Date(+m[1], +m[2]-1, +m[3], m[4]?+m[4]:0, m[5]?+m[5]:0, 0, 0);
+}
+function mid(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+function dayDiff(target, from){
+  const a = parseDT(target); if(!a) return null;
+  return Math.round((mid(a) - mid(from)) / MS_DAY);
+}
+function fmtDate(s, withTime){
+  const d = parseDT(s); if(!d) return "—";
+  const p = n => String(n).padStart(2,"0");
+  const base = d.getFullYear() + "-" + p(d.getMonth()+1) + "-" + p(d.getDate());
+  if(withTime && /[T ]\d{2}:\d{2}/.test(s)) return base + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+  return base;
+}
+function fmtMd(s){ const d = parseDT(s); if(!d) return "—";
+  return (d.getMonth()+1) + "月" + d.getDate() + "日"; }
+const WD = ["周日","周一","周二","周三","周四","周五","周六"];
+function weekday(s){ const d = parseDT(s); return d ? WD[d.getDay()] : ""; }
+
+let toastTimer = null;
+function toast(msg){
+  const t = $("#toast"); t.textContent = msg; t.classList.add("on");
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove("on"), 2600);
+}
+function copyText(text, okMsg){
+  const done = () => toast(okMsg || "已复制到剪贴板");
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(text).then(done).catch(()=>fallback());
+  } else fallback();
+  function fallback(){
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); done(); }catch(e){ toast("复制失败,请手动选择文本"); }
+    document.body.removeChild(ta);
+  }
+}
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* =========================================================
+   1. 种子数据(报名窗口均为真实检索结果,按可信度标注)
+   confidence: official=官方公告 / reported=媒体多源 / projected=按往年规律推算 / unknown=待公布
+   ========================================================= */
+const SEED_RACES = [
+  /* ---------- 世界马拉松大满贯 ---------- */
+  { id:"chi27", name:"2027 芝加哥马拉松", en:"Bank of America Chicago Marathon",
+    city:"芝加哥", country:"美国", region:"北美", tier:"maj", raceDate:"2027-10-10",
+    regOpen:"2026-10-08T08:00", regClose:"2026-10-29T14:00",
+    mode:"lottery", drawDate:"2026-12-08", payDeadline:"2026-12-15T23:59",
+    fee:"$250 美国居民 / $260 非美国居民", quota:"约 55,000", odds:"约 25%",
+    url:"https://www.chicagomarathon.com/apply", confidence:"official",
+    note:"保证名额与抽签名额在<b>同一个窗口</b>申请(10/8–10/29)。时间达标者(16–34 岁男子 2:50:00、女子 3:20:00 及同类组别)可直接申请保证名额。中签后须于 12/15 前完成缴费,逾期名额直接释放。" },
+
+  { id:"syd27", name:"2027 悉尼马拉松", en:"TCS Sydney Marathon",
+    city:"悉尼", country:"澳大利亚", region:"大洋洲", tier:"maj", raceDate:"2027-08-29",
+    regOpen:"2026-09-29", regClose:"2026-10-19", mode:"lottery",
+    drawDate:"2026-11-03", payDeadline:null,
+    fee:"A$280 澳居民 / A$330 国际", quota:"约 40,000", odds:"约 32.5%",
+    url:"https://www.sydneymarathon.com/", confidence:"official",
+    note:"<b>当前正在开放中。</b>抽签免费,是所有大满贯里中签率最高的一场。2026 年有 12.3 万人报名抢 4 万个名额。" },
+
+  { id:"ber27", name:"2027 柏林马拉松", en:"Generali Berlin Marathon",
+    city:"柏林", country:"德国", region:"欧洲", tier:"maj", raceDate:"2027-09-26",
+    regOpen:"2026-10-01", regClose:"2026-11-12", mode:"lottery",
+    drawDate:"2026-12-05", payDeadline:null,
+    fee:"约 €205(以官网为准)", quota:"约 55,000", odds:"约 20%",
+    url:"https://www.bmw-berlin-marathon.com/", confidence:"reported",
+    note:"<b>当前正在开放中</b>,窗口长达 6 周,是最不容易错过的大满贯。2027 年起冠名由 BMW 变更为 Generali。不同信源给出的截止日略有差异(11/6 或 11/12),以官网为准。" },
+
+  { id:"nyc27", name:"2027 纽约马拉松", en:"TCS New York City Marathon",
+    city:"纽约", country:"美国", region:"北美", tier:"maj", raceDate:"2027-11-07",
+    regOpen:"2027-02-04", regClose:"2027-02-25", mode:"lottery",
+    drawDate:"2027-03-04", payDeadline:null,
+    fee:"见官网", quota:"约 59,000", odds:"约 1%–5%",
+    url:"https://www.nyrr.org/tcsnycmarathon", confidence:"projected",
+    note:"全球中签率最低的大满贯之一,2026 年超 24 万人报名。备选路径:慈善名额、官方旅行社套餐、NYRR 9+1 本地计划。" },
+
+  { id:"lon27", name:"2027 伦敦马拉松", en:"TCS London Marathon",
+    city:"伦敦", country:"英国", region:"欧洲", tier:"maj", raceDate:"2027-04-25",
+    regOpen:null, regClose:"2026-05-01", mode:"lottery",
+    drawDate:"2026-07-09", payDeadline:null,
+    fee:"£225 国际", quota:"两日赛制约 100,000", odds:"约 1.3%",
+    url:"https://www.tcslondonmarathon.com/", confidence:"official",
+    note:"公众抽签已于 2026-05-01 关闭,共 <b>133.8 万人</b>报名,历史最高。<b>下一步盯 Good For Age / Championship 时间达标通道 —— 预计 2026 年 10 月开放</b>,需持续关注官网。2027 年首次改为两日赛(4/24–4/25)。" },
+
+  { id:"tok27", name:"2027 东京马拉松", en:"Tokyo Marathon",
+    city:"东京", country:"日本", region:"亚洲", tier:"maj", raceDate:"2027-03-07",
+    regOpen:"2026-08-14T11:00", regClose:"2026-08-28T17:00", mode:"lottery",
+    drawDate:"2026-09-18", payDeadline:"2026-09-30T17:00",
+    fee:"$230 海外 / ¥19,800 日本国内", quota:"40,000(第 20 届)", odds:"约 10%",
+    url:"https://www.marathon.tokyo/en/participants/", confidence:"official",
+    note:"第 20 届,名额增至 4 万。海外跑者<b>必须本人</b>到 Tokyo Big Sight 领物,不接受代领,比赛日也不发放。" },
+
+  { id:"bos27", name:"2027 波士顿马拉松", en:"Boston Marathon",
+    city:"波士顿", country:"美国", region:"北美", tier:"maj", raceDate:"2027-04-19",
+    regOpen:"2026-09-14", regClose:"2026-09-18T17:00", mode:"qualify",
+    drawDate:"2026-09-23", payDeadline:null,
+    fee:"$260", quota:"约 30,000", odds:"按成绩择优",
+    url:"https://www.baa.org/races/boston-marathon/", confidence:"official",
+    note:"唯一不设抽签的大满贯,必须凭 BQ 达标成绩报名,且按「快者优先」录取 —— 实际需要比标准线快约 4–7 分钟。2027 新增规则:赛道净落差 1500–2999 英尺的成绩加罚 5 分钟,3000–5999 英尺加罚 10 分钟,6000 英尺以上直接不合格。" },
+
+  { id:"cap27", name:"2027 开普敦马拉松", en:"Sanlam Cape Town Marathon",
+    city:"开普敦", country:"南非", region:"非洲", tier:"maj", raceDate:"2027-05-23",
+    regOpen:"2026-06-10", regClose:"2026-06-24", mode:"lottery",
+    drawDate:"2026-06-26", payDeadline:null,
+    fee:"见官网", quota:"约 27,000", odds:null,
+    url:"https://www.capetownmarathon.com/", confidence:"official",
+    note:"2027 年正式成为第 8 个大满贯,也是非洲首场。抽签已结束;慈善名额(23 家合作机构)与 80 多家官方旅行社套餐于 2026-06-26 起<b>先到先得</b>。" },
+
+  /* ---------- 中国赛事 ---------- */
+  { id:"hkg27", name:"2027 渣打香港马拉松", en:"Standard Chartered Hong Kong Marathon",
+    city:"香港", country:"中国香港", region:"中国", tier:"gold", raceDate:"2027-01-17",
+    regOpen:"2026-09-11T14:00", regClose:"2026-09-20T19:00", mode:"lottery",
+    drawDate:"2026-10-07T14:00", payDeadline:"2026-10-10T23:59",
+    fee:"HK$600 全马 / HK$520 半马 / HK$420 10K", quota:"78,000(全马 18,000)",
+    odds:null, url:"https://www.hkmarathon.com/", confidence:"official",
+    note:"<b>第二轮抽签结果 10/7 14:00 公布,中签者须于 10/10 23:59 前完成缴费。</b>这是最容易丢名额的环节 —— 第一轮付款期只有 7 天,第二轮只有 3 天。" },
+
+  { id:"sha26", name:"2026 上海马拉松", en:"Shanghai Marathon",
+    city:"上海", country:"中国", region:"中国", tier:"candidate", raceDate:"2026-12-06",
+    regOpen:"2026-04-29T15:00", regClose:"2026-05-29T12:00", mode:"lottery",
+    drawDate:"2026-06-30", payDeadline:"2026-07-20T12:00",
+    fee:"¥200 中国籍(含港澳台) / $160 外籍", quota:"30,000(30 周年扩容)",
+    odds:null, url:"https://www.shang-ma.com/", confidence:"official",
+    note:"30 周年,马拉松项目由 23,000 扩至 30,000 人。世界大满贯候选赛事。健康跑 12/5 首次独立举办,规模 15,000。" },
+
+  { id:"fuz26", name:"2026 福州马拉松", en:"Fuzhou Marathon",
+    city:"福州", country:"中国", region:"中国", tier:"elite", raceDate:"2026-12-27",
+    regOpen:"2026-09-10T20:00", regClose:"2026-09-19T17:00", mode:"lottery",
+    drawDate:"2026-09-30", payDeadline:null,
+    fee:"见官网", quota:"35,000(全马 20,000 / 半马 15,000)",
+    odds:null, url:"https://www.fuzhou-marathon.com/", confidence:"official",
+    note:"世界田联精英标牌赛事。全马直通标准:男子 2:45 内、女子 3:00 内。连续九届完赛的「榕耀跑者」可直通。" },
+
+  { id:"gzh26", name:"2026 广州马拉松", en:"Guangzhou Marathon",
+    city:"广州", country:"中国", region:"中国", tier:"gold", raceDate:"2026-12-20",
+    regOpen:"2026-09-02T10:00", regClose:"2026-09-11T18:00", mode:"lottery",
+    drawDate:"2026-09-26", payDeadline:null,
+    fee:"¥180", quota:"30,000", odds:null,
+    url:"https://www.guangzhou-marathon.com/", confidence:"official",
+    note:"世界田联金标 + 中国田协金牌「双金」赛事,同时是马拉松大满贯年龄组世锦赛资格赛。新增「破全国马拉松纪录奖」12 万元。分四枪起跑(7:00/7:10/7:20/7:30),起点天河体育中心,终点海心沙。" },
+
+  { id:"bj26", name:"2026 北京马拉松", en:"Beijing Marathon",
+    city:"北京", country:"中国", region:"中国", tier:"gold", raceDate:"2026-10-18",
+    regOpen:null, regClose:null, mode:"lottery", drawDate:null, payDeadline:null,
+    fee:"见官网", quota:"约 32,000", odds:"常年低于 20%",
+    url:"https://www.beijing-marathon.com/", confidence:"unknown",
+    note:"「国马」,天安门起跑。中签率常年低于 20%。报名窗口以官方公告为准。" },
+
+  { id:"hzh26", name:"2026 杭州马拉松", en:"Hangzhou Marathon",
+    city:"杭州", country:"中国", region:"中国", tier:"gold", raceDate:"2026-11-01",
+    regOpen:null, regClose:null, mode:"lottery", drawDate:null, payDeadline:null,
+    fee:"见官网", quota:"约 22,000", odds:null,
+    url:"https://www.hzim.org/", confidence:"unknown",
+    note:"赛道从西湖跑到钱塘江,累计爬升约 131 米。报名窗口以官方公告为准。" },
+
+  { id:"nj26", name:"2026 南京马拉松", en:"Nanjing Marathon",
+    city:"南京", country:"中国", region:"中国", tier:"gold", raceDate:"2026-11-22",
+    regOpen:null, regClose:null, mode:"lottery", drawDate:null, payDeadline:null,
+    fee:"见官网", quota:"约 18,000", odds:null,
+    url:"https://www.nj-marathon.com/", confidence:"unknown",
+    note:"明城墙、玄武湖、夫子庙一线串联。报名窗口以官方公告为准。" },
+
+  { id:"sz26", name:"2026 深圳马拉松", en:"Shenzhen Marathon",
+    city:"深圳", country:"中国", region:"中国", tier:"gold", raceDate:"2026-12-06",
+    regOpen:null, regClose:null, mode:"lottery", drawDate:null, payDeadline:null,
+    fee:"见官网", quota:"约 30,000", odds:null,
+    url:"https://www.sz-marathon.com/", confidence:"unknown",
+    note:"赛道平坦(爬升约 60 米),12 月气温舒适。报名窗口以官方公告为准。" },
+
+  { id:"tpe26", name:"2026 台北马拉松", en:"Taipei Marathon",
+    city:"台北", country:"中国台湾", region:"中国", tier:"gold", raceDate:"2026-12-20",
+    regOpen:null, regClose:null, mode:"lottery", drawDate:null, payDeadline:null,
+    fee:"见官网", quota:"约 28,000", odds:null,
+    url:"https://www.taipei-marathon.com/", confidence:"unknown",
+    note:"赛道平坦(爬升约 40 米),12 月气温约 16℃。报名窗口以官方公告为准。" },
+
+  /* ---------- 国际赛事(2026 收官 + 常见选择) ---------- */
+  { id:"nyc26", name:"2026 纽约马拉松", en:"TCS New York City Marathon",
+    city:"纽约", country:"美国", region:"北美", tier:"maj", raceDate:"2026-11-01",
+    regOpen:null, regClose:"2026-02-25", mode:"lottery", drawDate:"2026-03-04", payDeadline:null,
+    fee:"见官网", quota:"50,000+", odds:"约 1%",
+    url:"https://www.nyrr.org/tcsnycmarathon", confidence:"official",
+    note:"2026 赛季收官大满贯。抽签已于 2026 年 2 月结束。" },
+
+  { id:"chi26", name:"2026 芝加哥马拉松", en:"Bank of America Chicago Marathon",
+    city:"芝加哥", country:"美国", region:"北美", tier:"maj", raceDate:"2026-10-11",
+    regOpen:null, regClose:"2025-11-18", mode:"lottery", drawDate:"2025-12-11", payDeadline:null,
+    fee:"$250 / $260", quota:"约 55,000", odds:"约 25%",
+    url:"https://www.chicagomarathon.com/", confidence:"official",
+    note:"2026 赛季倒数第二场大满贯。赛道极平(爬升约 240 英尺),是最快赛道之一。" },
+
+  { id:"val26", name:"2026 瓦伦西亚马拉松", en:"Maratón Valencia Trinidad Alfonso",
+    city:"瓦伦西亚", country:"西班牙", region:"欧洲", tier:"platinum", raceDate:"2026-12-06",
+    regOpen:null, regClose:null, mode:"fcfs", drawDate:null, payDeadline:null,
+    fee:"见官网", quota:null, odds:null,
+    url:"https://www.valenciaciudaddelrunning.com/", confidence:"unknown",
+    note:"世界田联白金标,全球最快赛道之一(累计爬升仅 15 米)。<b>先到先得</b>,满员即止 —— 这一类赛事才真正需要盯开放时间。" },
+
+  { id:"cim26", name:"2026 加州国际马拉松", en:"California International Marathon",
+    city:"萨克拉门托", country:"美国", region:"北美", tier:"elite", raceDate:"2026-12-06",
+    regOpen:null, regClose:null, mode:"fcfs", drawDate:null, payDeadline:null,
+    fee:"见官网", quota:"约 9,000", odds:null,
+    url:"https://runsra.org/california-international-marathon/", confidence:"unknown",
+    note:"点对点净下坡赛道(下降 350+ 英尺),12 月气温 40–50°F,是公认最理想的 BQ 冲刺赛事之一。" },
+
+  { id:"fuk26", name:"2026 福冈国际马拉松", en:"Fukuoka International Marathon",
+    city:"福冈", country:"日本", region:"亚洲", tier:"gold", raceDate:"2026-12-06",
+    regOpen:null, regClose:null, mode:"qualify", drawDate:null, payDeadline:null,
+    fee:"见官网", quota:null, odds:null,
+    url:"https://www.fukuoka-marathon.jp/", confidence:"unknown",
+    note:"日本男子精英马拉松代表赛事,主要以成绩达标方式参赛,大众名额极少。" },
+
+  { id:"bkk26", name:"2026 曼谷马拉松", en:"Amazing Thailand Marathon Bangkok",
+    city:"曼谷", country:"泰国", region:"亚洲", tier:"label", raceDate:"2026-11-29",
+    regOpen:null, regClose:null, mode:"fcfs", drawDate:null, payDeadline:null,
+    fee:"见官网", quota:null, odds:null,
+    url:"https://www.amazingthailandmarathon.com/", confidence:"unknown",
+    note:"清晨起跑避开热带高温,赛道极平(爬升约 5 米)。" },
+
+  { id:"sha27", name:"2027 上海马拉松", en:"Shanghai Marathon",
+    city:"上海", country:"中国", region:"中国", tier:"candidate", raceDate:"2027-12-05",
+    regOpen:"2027-05-01", regClose:null, mode:"lottery", drawDate:null, payDeadline:null,
+    fee:"见官网", quota:null, odds:null,
+    url:"https://www.shang-ma.com/", confidence:"projected",
+    note:"按 2026 年规律推算,2027 年报名预计于 2027 年 5 月开启。<b>日期为推算,务必以官方公告为准。</b>若 2027 年正式成为大满贯,中签率会显著下降。" }
+];
+
+/* 材料清单规则 —— 按赛制生成 */
+function buildChecklist(race, profile){
+  const list = [];
+  const isCN = race.region === "中国";
+  list.push({ k:"id", t:"有效证件原件(报名时需证件号,领物时需原件)",
+    why: isCN ? "中国大陆赛事需身份证;港澳台及外籍跑者用护照/通行证" : "护照有效期需覆盖比赛日之后 6 个月" });
+  list.push({ k:"photo", t:"证件照电子版(部分赛事要求上传)",
+    why:"多为近 6 个月内白底或蓝底证件照" });
+  if(race.mode === "lottery" || isCN){
+    list.push({ k:"proof", t:"24 个月内的完赛证明(1 次全马 或 2 次半马)",
+      why:"国内赛事报名硬性要求,线上赛事成绩通常不被认可" });
+  }
+  if(race.mode === "qualify"){
+    list.push({ k:"bq", t:"达标的马拉松成绩证书(需官方可核验)",
+      why:"波士顿等达标制赛事要求上传官方成绩证明,Strava 链接无效" });
+  }
+  list.push({ k:"med", t:"体检报告 / 健康证明(含心电图)",
+    why:"国内赛事普遍要求赛前 12 个月内体检;注意有效期" });
+  list.push({ k:"ec", t:"紧急联系人信息",
+    why:"报名表必填项" });
+  if(race.tier === "maj"){
+    list.push({ k:"pay", t:"国际支付方式(Visa / Mastercard)",
+      why:"境外赛事报名费需外币支付,建议提前确认卡片可境外交易" });
+    list.push({ k:"visa", t:"签证与行程安排",
+      why:"中签后再办签证时间紧张,建议提前评估" });
+  }
+  list.push({ k:"shirt", t:"参赛服尺码与鞋子信息",
+    why:"部分赛事在报名时即需选定尺码,赛前不可更改" });
+  return list;
+}
+
+/* =========================================================
+   2. 状态引擎
+   ========================================================= */
+const MODE_LABEL = { lottery:"抽签制", fcfs:"先到先得", qualify:"成绩达标制", invite:"邀请制" };
+const MODE_TIP = {
+  lottery:"报名先后不影响中签率,重点是别错过窗口和中签后按时缴费",
+  fcfs:"名额有限、满员即止,需要在开放时尽快提交",
+  qualify:"凭达标成绩报名,按快慢择优录取",
+  invite:"需邀请或资格审核"
+};
+
+function computeStatus(race, now){
+  const rO = parseDT(race.regOpen), rC = parseDT(race.regClose);
+  const dD = parseDT(race.drawDate), pD = parseDT(race.payDeadline), rD = parseDT(race.raceDate);
+  const st = race.userStatus || "watching";
+  const raceEnded = !!(rD && now > new Date(rD.getTime() + MS_DAY));
+
+  /* ---- 用户显式状态优先 ---- */
+  if(st === "skipped") return { key:"skipped", label:"已放弃", cls:"idle", urg:900, cd:null, cdLabel:null, cdDate:null };
+
+  /* 已中签 → 盯缴费截止(最关键的环节) */
+  if(st === "won"){
+    if(pD && now <= pD){
+      const d = dayDiff(race.payDeadline, now);
+      return { key:"pay", label:"待缴费", cls:"pay", urg: d,
+        cd:d, cdLabel:"缴费截止", cdDate:race.payDeadline,
+        note:"<b>这是最容易丢名额的环节。</b>中签不等于拿到名额 —— 必须在截止时间前完成付款,逾期名额立即释放且不可恢复。" };
+    }
+    return { key:"lost", label:"已逾期·名额释放", cls:"idle", urg:800, cd:null, cdLabel:null, cdDate:null,
+      note:"缴费截止时间已过。若确有特殊情况,可联系组委会询问是否仍在候补序列。" };
+  }
+
+  if(st === "paid"){
+    if(raceEnded) return { key:"done", label:"已完赛", cls:"idle", urg:850, cd:null, cdLabel:null, cdDate:null };
+    return { key:"racing", label:"已锁定·待比赛", cls:"open", urg:100,
+      cd: rD ? dayDiff(race.raceDate, now) : null, cdLabel:"距比赛", cdDate:race.raceDate,
+      note:"报名环节已结束,进入赛前准备:领物时间、行程住宿、装备、赛前减量训练。" };
+  }
+
+  if(raceEnded) return { key:"done", label:"已完赛", cls:"idle", urg:850, cd:null, cdLabel:null, cdDate:null };
+  if(st === "lost") return { key:"closed", label:"未中签", cls:"idle", urg:760,
+    cd: rD ? dayDiff(race.raceDate, now) : null, cdLabel:"距比赛", cdDate:race.raceDate };
+
+  /* ---- 关注中 / 已提交:按窗口推进 ---- */
+  if(rO && rC && now >= rO && now <= rC){
+    const d = dayDiff(race.regClose, now);
+    if(d <= 3) return { key:"closing", label:"即将截止", cls:"closing", urg: d,
+      cd:d, cdLabel:"天后截止", cdDate:race.regClose,
+      note:"窗口即将关闭。若尚未提交请立即处理。" };
+    return { key:"open", label:"报名中", cls:"open", urg:30, cd:d, cdLabel:"天后截止", cdDate:race.regClose };
+  }
+  if(rO && now < rO){
+    const d = dayDiff(race.regOpen, now);
+    if(d <= 7) return { key:"soon", label:"即将开放", cls:"soon", urg: 9,
+      cd:d, cdLabel:"天后开放", cdDate:race.regOpen,
+      note:"窗口临近。建议现在把档案和材料核对一遍,开放当天可以直接提交。" };
+    return { key:"notopen", label:"未开放", cls:"idle", urg: 500 - d,
+      cd:d, cdLabel:"天后开放", cdDate:race.regOpen };
+  }
+  if(rC && now > rC){
+    if(dD && now < dD) return { key:"waitdraw", label:"待抽签", cls:"wait", urg:300,
+      cd:dayDiff(race.drawDate, now), cdLabel:"天后公布", cdDate:race.drawDate,
+      note:"报名已提交,等待抽签。中签后<b>立即缴费</b> —— 付款期通常只有 3–7 天。" };
+    /* 抽签结果已公布、但用户还没更新状态 —— 全年最需要提醒的时刻。
+       中签后缴费期往往只有 3–7 天,逾期名额立即释放,而用户未必知道结果已出。 */
+    if(dD && st === "watching"){
+      const since = -dayDiff(race.drawDate, now);
+      if(since <= 7) return { key:"drawdone", label:"结果已公布·待确认", cls:"closing", urg: since,
+        cd:since, cdLabel:"天前已公布", cdDate:race.drawDate,
+        note:"抽签结果已于 <b>" + since + " 天前</b>公布,但本赛事状态仍是「关注中」。请立即到官网查询:<b>中签后须在 3–7 天内完成缴费,逾期名额立即释放且不可恢复。</b>查到结果后,把卡片右侧状态改为「已中签」或「未中签」,系统会自动接管后续倒计时。" };
+    }
+    if(st === "submitted") return { key:"pending", label:"已报名·待结果", cls:"wait", urg:320, cd:null, cdLabel:null, cdDate:null };
+    return { key:"closed", label:"已截止", cls:"idle", urg:700,
+      cd: rD ? dayDiff(race.raceDate, now) : null, cdLabel:"距比赛", cdDate:race.raceDate };
+  }
+
+  /* ---- 窗口数据缺失 ---- */
+  const dToRace = rD ? dayDiff(race.raceDate, now) : null;
+  if(dToRace !== null && dToRace <= 45){
+    return { key:"unknown", label:"窗口未记录", cls:"idle", urg:450,
+      cd:dToRace, cdLabel:"距比赛", cdDate:race.raceDate,
+      note:"距比赛仅 <b>" + dToRace + " 天</b>,该赛事报名窗口大概率已经关闭(国内赛事通常在赛前 1–2 个月前截止),而本系统未收录其报名日期。建议直接访问官网确认,并点「编辑」补录窗口日期 —— 明年可以直接复用。" };
+  }
+  return { key:"unknown", label:"窗口待公布", cls:"idle", urg:600,
+    cd:dToRace, cdLabel:"距比赛", cdDate:race.raceDate,
+    note:"官方尚未公布报名时间。官网入口已保存,公布后请点击「编辑」补上窗口日期,系统即可自动接管倒计时。" };
+}
+
+const URG_CLS = { pay:"u-red", drawdone:"u-amber", closing:"u-amber", open:"u-teal", soon:"u-blue",
+                  waitdraw:"u-purple", pending:"u-purple", unknown:"u-grey",
+                  notopen:"u-grey", closed:"u-grey", done:"u-grey", skipped:"u-grey",
+                  lost:"u-grey", racing:"u-teal" };
+
+/* =========================================================
+   3. 状态与持久化
+   ========================================================= */
+const EMPTY_PROFILE = {
+  name:"", nameEn:"", gender:"", birth:"", idType:"身份证", idNo:"", phone:"", email:"",
+  city:"", country:"中国", blood:"", shirt:"", shoe:"", travel:"愿意",
+  ecName:"", ecRel:"", ecPhone:"",
+  pbFull:"", pbFullRace:"", pbFullDate:"", pbHalf:"", pbHalfRace:"", pbHalfDate:"",
+  medDate:"", medMonths:12, certPlace:"", budget:"", radius:"国内任意", notes:""
+};
+
+let DB = { profile: Object.assign({}, EMPTY_PROFILE), races: [], checklists: {}, created: null, updated: null };
+
+function load(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw){
+      const d = JSON.parse(raw);
+      DB.profile = Object.assign({}, EMPTY_PROFILE, d.profile || {});
+      DB.races = Array.isArray(d.races) ? d.races : [];
+      DB.checklists = d.checklists || {};
+      DB.created = d.created || null;
+      DB.updated = d.updated || null;
+    }
+  }catch(e){ console.warn("读取本地数据失败", e); }
+  if(!DB.races.length) resetToSeed(true);
+}
+function save(){
+  DB.updated = new Date().toISOString();
+  if(!DB.created) DB.created = DB.updated;
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(DB)); }
+  catch(e){ toast("本地存储写入失败,请及时导出备份"); }
+}
+function resetToSeed(silent){
+  DB.races = JSON.parse(JSON.stringify(SEED_RACES));
+  DB.races.forEach(r => { if(!r.userStatus) r.userStatus = "watching"; });
+  DB.checklists = {};
+  if(!silent){ save(); render(); toast("已恢复为内置种子赛事(" + DB.races.length + " 场)"); }
+}
+
+/* =========================================================
+   4. 渲染
+   ========================================================= */
+let activeFilter = "action";
+const NOW = new Date();
+
+function ageFromBirth(birth){
+  const d = parseDT(birth); if(!d) return null;
+  const t = new Date();
+  let a = t.getFullYear() - d.getFullYear();
+  const m = t.getMonth() - d.getMonth();
+  if(m < 0 || (m === 0 && t.getDate() < d.getDate())) a--;
+  return a;
+}
+function pctRaceReady(race){
+  const list = buildChecklist(race, DB.profile);
+  const done = DB.checklists[race.id] || {};
+  const ok = list.filter(i => done[i.k]).length;
+  return { ok, total:list.length, pct: list.length ? Math.round(ok/list.length*100) : 0 };
+}
+
+function profileWarnings(race){
+  const w = [];
+  const p = DB.profile;
+  if(!p.name || !p.idNo) w.push("档案未填写完整:缺少姓名或证件号码,无法报名");
+  if(race.region === "中国"){
+    const hasProof = (p.pbFull && p.pbFullDate) || (p.pbHalf && p.pbHalfDate);
+    if(!hasProof) w.push("缺少24个月内的完赛证明(1次全马或2次半马),国内赛事报名会被拒");
+    else{
+      const d = parseDT(p.pbFullDate || p.pbHalfDate);
+      if(d && (new Date() - d) / MS_DAY > 730) w.push("已有成绩记录已超过 24 个月,可能不再被认可");
+    }
+    if(!p.medDate) w.push("未填写体检报告日期,国内赛事普遍要求赛前 12 个月内体检");
+    else{
+      const d = parseDT(p.medDate), mo = Number(p.medMonths) || 12;
+      const exp = new Date(d.getFullYear(), d.getMonth() + mo, d.getDate());
+      const left = Math.round((exp - new Date()) / MS_DAY);
+      if(left < 0) w.push("体检报告已过期(" + (mo) + " 个月有效期),需重新体检");
+      else if(left <= 45) w.push("体检报告将在 " + left + " 天后过期,建议尽快更新");
+    }
+  }
+  if(race.mode === "qualify" && !p.pbFull) w.push("该赛事为成绩达标制,需先填写全马最好成绩");
+  if(race.mode === "qualify" && p.pbFull){
+    const secs = parseHMS(p.pbFull);
+    const age = ageFromBirth(p.birth);
+    /* 各年龄组男子达标线(芝加哥/波士顿通用参照) */
+    const STDS = [[34,"2:50:00"],[39,"3:00:00"],[44,"3:05:00"],[49,"3:15:00"],[54,"3:20:00"],
+                  [59,"3:30:00"],[64,"3:50:00"],[69,"4:05:00"],[74,"4:20:00"],[79,"4:35:00"],[999,"4:50:00"]];
+    const std = age === null ? "2:50:00" : (STDS.find(s => age <= s[0]) || STDS[STDS.length-1])[1];
+    const stdSec = parseHMS(std);
+    if(secs && stdSec && secs > stdSec){
+      w.push("当前全马成绩 " + p.pbFull + " 未达" + (age === null ? "常见" : age + " 岁组") +
+             "达标线 " + std + ",暂不具备保证名额资格");
+    }
+  }
+  return w;
+}
+function parseHMS(s){
+  const m = String(s||"").match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if(!m) return null;
+  return m[3] ? (+m[1])*3600 + (+m[2])*60 + (+m[3]) : (+m[1])*60 + (+m[2]);
+}
+
+function render(){
+  const now = new Date();
+  $("#todayLabel").textContent = now.getFullYear() + " 年 " + (now.getMonth()+1) + " 月 " + now.getDate() + " 日 " + WD[now.getDay()];
+  if(DB.updated){
+    const d = new Date(DB.updated);
+    $("#syncLabel").textContent = "上次保存 " + d.getFullYear() + "-" +
+      String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0") + " " +
+      String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+  }
+
+  const computed = DB.races.map(r => ({ r, s: computeStatus(r, now) }));
+
+  /* ---- KPI ---- */
+  const cnt = k => computed.filter(x => x.s.key === k).length;
+  const actionable = computed.filter(x => ["pay","drawdone","closing","open","soon","waitdraw"].indexOf(x.s.key) >= 0);
+  /* 紧迫阈值 12 覆盖:待缴费(0-3)、结果待确认(0-7)、即将截止(0-3)、即将开放(9) */
+  const urgent = computed.filter(x => x.s.urg <= 12);
+  $("#kpis").innerHTML = [
+    row(urgent.length, "需要立刻处理", urgent.length ? "alert" : ""),
+    row(cnt("pay"), "待缴费(最容易丢名额)", cnt("pay") ? "alert" : ""),
+    row(cnt("drawdone"), "结果待确认", cnt("drawdone") ? "warn" : ""),
+    row(cnt("closing"), "即将截止", cnt("closing") ? "warn" : ""),
+    row(cnt("open"), "报名中", ""),
+    row(cnt("soon"), "7 天内开放", cnt("soon") ? "warn" : ""),
+    row(cnt("waitdraw"), "待抽签", ""),
+    row(actionable.length, "需要行动合计", "")
+  ].join("");
+  function row(n, l, cls){ return '<div class="kpi ' + cls + '"><div class="n">' + n + '</div><div class="l">' + l + '</div></div>'; }
+
+  /* ---- 行动横幅 ---- */
+  const banner = [];
+  if(cnt("pay")) banner.push("有 <b>" + cnt("pay") + "</b> 场赛事已中签待缴费 —— 逾期名额立即释放,请优先处理。");
+  if(cnt("drawdone")) banner.push("有 <b>" + cnt("drawdone") + "</b> 场赛事<b>抽签结果已公布</b>但尚未确认 —— 立即去官网查结果,中签后缴费期通常只有 3–7 天,逾期名额立即释放。");
+  if(cnt("closing")) banner.push("有 <b>" + cnt("closing") + "</b> 场赛事报名窗口 3 天内关闭。");
+  if(cnt("soon")) banner.push("有 <b>" + cnt("soon") + "</b> 场赛事将在 7 天内开放报名,建议现在核对档案材料。");
+  if(cnt("open")) banner.push("当前有 <b>" + cnt("open") + "</b> 场赛事可正常报名。");
+  if(cnt("waitdraw")) banner.push("有 <b>" + cnt("waitdraw") + "</b> 场已提交、等待抽签 —— 出结果后请在卡片右侧把状态改为「已中签」,系统会立刻开始盯缴费截止时间。");
+  $("#actionBanner").innerHTML = banner.length
+    ? banner.join(" ")
+    : "当前没有紧急待办。可以趁这段时间把档案补齐 —— 报名窗口开启时,资料齐全的人才有机会第一时间提交。";
+
+  /* ---- 列表 ---- */
+  const order = { pay:0, drawdone:1, closing:2, soon:3, open:4, waitdraw:5, pending:6, racing:7,
+                  notopen:8, unknown:9, closed:10, lost:11, done:12, skipped:13 };
+  let rows = computed.slice().sort((a,b) => {
+    const oa = order[a.s.key] == null ? 50 : order[a.s.key];
+    const ob = order[b.s.key] == null ? 50 : order[b.s.key];
+    if(oa !== ob) return oa - ob;
+    return a.s.urg - b.s.urg;
+  });
+  rows = rows.filter(x => {
+    if(activeFilter === "all") return true;
+    if(activeFilter === "action") return ["pay","drawdone","closing","soon","open","waitdraw"].indexOf(x.s.key) >= 0;
+    if(activeFilter === "closed") return ["closed","lost","done","skipped"].indexOf(x.s.key) >= 0;
+    if(activeFilter === "wait") return ["waitdraw","pending"].indexOf(x.s.key) >= 0;
+    return x.s.key === activeFilter;
+  });
+  $("#listCount").textContent = "显示 " + rows.length + " / " + computed.length + " 场";
+  $("#raceList").innerHTML = rows.length ? rows.map(renderCard).join("")
+    : '<div class="empty">该筛选条件下没有赛事。切换上方标签查看其他状态。</div>';
+
+  renderProfile();
+  renderQualHint();
+}
+
+function renderCard(x){
+  const r = x.r, s = x.s;
+  const ready = pctRaceReady(r);
+  const warns = profileWarnings(r);
+  const cdTxt = (s.cd === null || s.cd === undefined) ? "" :
+    '<div class="r-cd">' + (s.cd <= 0 ? "就是今天" : s.cd + " " + s.cdLabel) +
+    (s.cd > 0 && s.cdDate ? ' <small>(' + fmtMd(s.cdDate) + ')</small>' : '') + '</div>';
+
+  const noteHtml = [];
+  if(s.note) noteHtml.push('<div class="r-note warn">' + s.note + '</div>');
+  if(r.note) noteHtml.push('<div class="r-note">' + r.note + '</div>');
+  if(warns.length) noteHtml.push('<div class="r-note warn"><b>材料预警:</b><br>· ' + warns.map(esc).join('<br>· ') + '</div>');
+
+  const confTxt = { official:"官方公告", reported:"媒体多源", projected:"按规律推算", unknown:"待公布" }[r.confidence] || "";
+  const tierTxt = { maj:"世界大满贯", candidate:"大满贯候选", platinum:"白金标", gold:"金标", elite:"精英标", label:"标牌" }[r.tier] || "";
+
+  return '<div class="race ' + (URG_CLS[s.key] || "u-grey") + '">' +
+    '<div class="r-top">' +
+      '<div>' +
+        '<div class="r-name">' + esc(r.name) +
+          '<span class="badge s-' + s.cls + '">' + s.label + '</span>' +
+          (tierTxt ? '<span class="badge tier">' + tierTxt + '</span>' : '') +
+          (r.confidence !== "official" && confTxt ? '<span class="conf">' + confTxt + '</span>' : '') +
+        '</div>' +
+        '<div class="r-meta">' + esc(r.en) + ' · ' + esc(r.city) + ' · ' + esc(r.country) + '</div>' +
+      '</div>' +
+      '<div class="r-state">' + cdTxt +
+        '<div class="r-meta" style="margin-top:6px">材料就绪 ' + ready.ok + '/' + ready.total +
+        ' <span class="badge ' + (ready.pct===100 ? "s-open" : "s-idle") + '">' + ready.pct + '%</span></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="r-grid">' +
+      '<div>比赛日 <b>' + fmtDate(r.raceDate) + ' ' + weekday(r.raceDate) + '</b></div>' +
+      '<div>赛制 <b>' + (MODE_LABEL[r.mode]||"—") + '</b></div>' +
+      '<div>报名开放 <b>' + fmtDate(r.regOpen, true) + '</b></div>' +
+      '<div>报名截止 <b>' + fmtDate(r.regClose, true) + '</b></div>' +
+      (r.drawDate ? '<div>抽签公布 <b>' + fmtDate(r.drawDate, true) + '</b></div>' : '') +
+      (r.payDeadline ? '<div>缴费截止 <b>' + fmtDate(r.payDeadline, true) + '</b></div>' : '') +
+      '<div>报名费 <b>' + esc(r.fee || "见官网") + '</b></div>' +
+      '<div>规模 <b>' + esc(r.quota || "—") + '</b></div>' +
+      (r.odds ? '<div>中签率 <b>' + esc(r.odds) + '</b></div>' : '') +
+      '<div>报名官网 <b>' + esc(safeHost(r.url)) + '</b></div>' +
+    '</div>' +
+    noteHtml.join("") +
+    '<div class="r-acts">' +
+      '<button class="btn pri" data-act="open" data-id="' + r.id + '">打开报名页</button>' +
+      '<button class="btn" data-act="copy" data-id="' + r.id + '">复制报名资料</button>' +
+      '<button class="btn" data-act="check" data-id="' + r.id + '">材料清单</button>' +
+      '<button class="btn" data-act="ics" data-id="' + r.id + '">加入日历</button>' +
+      '<button class="btn sm" data-act="edit" data-id="' + r.id + '">编辑</button>' +
+      '<span class="sp"></span>' +
+      statusPicker(r) +
+    '</div>' +
+  '</div>';
+}
+function safeHost(u){ try{ return new URL(u).host; }catch(e){ return u || "—"; } }
+function statusPicker(r){
+  const opts = [["watching","关注中"],["submitted","已提交报名"],["won","已中签"],["paid","已缴费"],
+                ["lost","未中签"],["skipped","已放弃"]];
+  return '<select class="btn sm" data-act="status" data-id="' + r.id + '" style="padding:4px 8px">' +
+    opts.map(o => '<option value="' + o[0] + '"' + ((r.userStatus||"watching")===o[0] ? " selected" : "") +
+      '>' + o[1] + '</option>').join("") + '</select>';
+}
+
+/* ---------- 档案表单 ---------- */
+const PROFILE_FIELDS = [
+  ["p_name","name"],["p_nameEn","nameEn"],["p_gender","gender"],["p_birth","birth"],
+  ["p_idType","idType"],["p_idNo","idNo"],["p_phone","phone"],["p_email","email"],
+  ["p_city","city"],["p_country","country"],["p_blood","blood"],["p_shirt","shirt"],
+  ["p_shoe","shoe"],["p_travel","travel"],["p_ecName","ecName"],["p_ecRel","ecRel"],
+  ["p_ecPhone","ecPhone"],["p_pbFull","pbFull"],["p_pbFullRace","pbFullRace"],["p_pbFullDate","pbFullDate"],
+  ["p_pbHalf","pbHalf"],["p_pbHalfRace","pbHalfRace"],["p_pbHalfDate","pbHalfDate"],
+  ["p_medDate","medDate"],["p_medMonths","medMonths"],["p_certPlace","certPlace"],
+  ["p_budget","budget"],["p_radius","radius"],["p_notes","notes"]
+];
+function renderProfile(){
+  PROFILE_FIELDS.forEach(([el, key]) => {
+    const node = document.getElementById(el);
+    if(node && node.value !== String(DB.profile[key] == null ? "" : DB.profile[key])){
+      node.value = DB.profile[key] == null ? "" : DB.profile[key];
+    }
+  });
+}
+function readProfile(){
+  const p = {};
+  PROFILE_FIELDS.forEach(([el, key]) => {
+    const node = document.getElementById(el);
+    if(node) p[key] = node.value;
+  });
+  return p;
+}
+function renderQualHint(){
+  const p = DB.profile;
+  const age = ageFromBirth(p.birth);
+  const out = [];
+  if(age !== null){
+    out.push("当前年龄 <b>" + age + "</b> 岁。");
+    if(p.pbFull){
+      const secs = parseHMS(p.pbFull);
+      if(secs){
+        const std = age <= 34 ? "2:50:00" : age <= 39 ? "3:00:00" : age <= 44 ? "3:05:00" : "3:15:00";
+        out.push("以该年龄组男子芝加哥达标线 " + std + " 为参照,你的全马成绩 " + p.pbFull +
+          (secs <= parseHMS(std) ? " <b>已达标</b>,可申请保证名额。" : " <b>尚未达标</b>。"));
+      }
+    }
+    if(p.pbFull){
+      out.push("波士顿 2027 实际录取线通常比标准线快 4–7 分钟,报名前请预留余量。");
+    }
+  } else {
+    out.push("填写出生日期后,这里会自动对照各年龄组的达标线给出判断。");
+  }
+  $("#qualHint").innerHTML = out.join(" ");
+}
+
+/* =========================================================
+   5. 动作
+   ========================================================= */
+function profileBlock(race){
+  const p = DB.profile;
+  const L = [];
+  L.push("===== 报名资料 · " + (race ? race.name : "通用") + " =====");
+  L.push("姓名:" + (p.name || "【未填】"));
+  if(p.nameEn) L.push("拼音 / 英文名:" + p.nameEn);
+  if(p.gender) L.push("性别:" + p.gender);
+  if(p.birth) L.push("出生日期:" + p.birth + (ageFromBirth(p.birth) !== null ? "(" + ageFromBirth(p.birth) + " 岁)" : ""));
+  L.push("证件类型:" + (p.idType || "身份证"));
+  L.push("证件号码:" + (p.idNo || "【未填】"));
+  L.push("手机号:" + (p.phone || "【未填】"));
+  if(p.email) L.push("邮箱:" + p.email);
+  if(p.city || p.country) L.push("常住地:" + [p.country, p.city].filter(Boolean).join(" "));
+  if(p.blood) L.push("血型:" + p.blood);
+  if(p.shirt) L.push("参赛服尺码:" + p.shirt);
+  if(p.shoe) L.push("鞋码:" + p.shoe);
+  if(p.ecName) L.push("紧急联系人:" + p.ecName + (p.ecRel ? "(" + p.ecRel + ")" : "") + " " + (p.ecPhone || ""));
+  if(p.pbFull){
+    const ref = [p.pbFullRace, p.pbFullDate].filter(Boolean).join(" / ");
+    L.push("全马最好成绩:" + p.pbFull + (ref ? "(" + ref + ")" : ""));
+  }
+  if(p.pbHalf){
+    const ref = [p.pbHalfRace, p.pbHalfDate].filter(Boolean).join(" / ");
+    L.push("半马最好成绩:" + p.pbHalf + (ref ? "(" + ref + ")" : ""));
+  }
+  if(p.medDate) L.push("最近体检日期:" + p.medDate);
+  if(p.notes) L.push("备注:" + p.notes);
+  L.push("");
+  L.push("—— 报名后请回到「马拉松报名指挥中心」把该赛事状态改为「已提交报名」,系统会在抽签日和缴费截止日提醒你。");
+  return L.filter(x => x !== "").join("\n");
+}
+
+function openRace(id){
+  const r = DB.races.find(x => x.id === id); if(!r) return;
+  window.open(r.url, "_blank", "noopener");
+  const p = DB.profile;
+  const missing = [];
+  if(!p.name) missing.push("姓名");
+  if(!p.idNo) missing.push("证件号码");
+  if(!p.phone) missing.push("手机号");
+  if(!p.email) missing.push("邮箱");
+  if(!p.ecName) missing.push("紧急联系人");
+  if(missing.length){
+    toast("已打开官网。建议先补齐档案:" + missing.join("、"));
+  } else {
+    copyText(profileBlock(r), "已打开官网,报名资料已复制到剪贴板,直接粘贴即可");
+  }
+}
+
+function openChecklist(id){
+  const r = DB.races.find(x => x.id === id); if(!r) return;
+  const list = buildChecklist(r, DB.profile);
+  const done = DB.checklists[r.id] || {};
+  const warn = profileWarnings(r);
+  const body = '<h2 style="font-size:17px;margin:0 0 4px">' + esc(r.name) + ' · 报名材料清单</h2>' +
+    '<p class="hint" style="margin:0 0 14px">赛制:' + (MODE_LABEL[r.mode]||"—") + ' · ' + esc(MODE_TIP[r.mode]||"") + '</p>' +
+    (warn.length ? '<div class="callout" style="margin-bottom:14px"><b>当前档案有 ' + warn.length + ' 项问题:</b><br>· ' + warn.map(esc).join("<br>· ") + '</div>' : '') +
+    '<div id="chkList">' + list.map(i =>
+      '<label class="chk' + (done[i.k] ? " on" : "") + '"><input type="checkbox" data-k="' + i.k + '"' +
+      (done[i.k] ? " checked" : "") + '><span>' + esc(i.t) + '<span class="why">' + esc(i.why) + '</span></span></label>'
+    ).join("") + '</div>' +
+    '<div class="row" style="margin-top:18px">' +
+      '<button class="btn pri" id="chkAll">全部标记完成</button>' +
+      '<button class="btn" id="chkCopy">复制资料到剪贴板</button>' +
+      '<button class="btn" id="chkOpen">打开官网</button>' +
+      '<span class="sp"></span><button class="btn" id="chkClose">关闭</button>' +
+    '</div>';
+  showModal(body);
+  $$("#chkList input").forEach(cb => cb.addEventListener("change", () => {
+    DB.checklists[r.id] = DB.checklists[r.id] || {};
+    if(cb.checked) DB.checklists[r.id][cb.dataset.k] = 1;
+    else delete DB.checklists[r.id][cb.dataset.k];
+    cb.closest(".chk").classList.toggle("on", cb.checked);
+    save(); render();
+  }));
+  $("#chkAll").onclick = () => {
+    DB.checklists[r.id] = {};
+    list.forEach(i => DB.checklists[r.id][i.k] = 1);
+    save(); render(); openChecklist(id);
+  };
+  $("#chkCopy").onclick = () => copyText(profileBlock(r));
+  $("#chkOpen").onclick = () => window.open(r.url, "_blank", "noopener");
+  $("#chkClose").onclick = hideModal;
+}
+function showModal(html){ $("#modalBox").innerHTML = html; $("#modal").classList.add("on"); }
+function hideModal(){ $("#modal").classList.remove("on"); }
+
+function openEdit(id){
+  const r = DB.races.find(x => x.id === id); if(!r) return;
+  const f = (label, key, type, ph) =>
+    '<div class="f"><label>' + label + '</label><input data-k="' + key + '" type="' + (type||"text") + '" value="' +
+    esc(r[key] == null ? "" : r[key]) + '" placeholder="' + (ph||"") + '"></div>';
+  const body = '<h2 style="font-size:17px;margin:0 0 14px">编辑赛事</h2><div class="fgrid">' +
+    f("赛事名称","name") + f("英文名","en") + f("城市","city") + f("国家 / 地区","country") +
+    f("比赛日","raceDate","date") +
+    '<div class="f"><label>赛制</label><select data-k="mode">' +
+      Object.keys(MODE_LABEL).map(k => '<option value="' + k + '"' + (r.mode===k?" selected":"") + '>' + MODE_LABEL[k] + '</option>').join("") +
+    '</select></div>' +
+    f("报名开放(可含时间,如 2026-10-08T08:00)","regOpen","text","2026-10-08T08:00") +
+    f("报名截止","regClose","text","2026-10-29T14:00") +
+    f("抽签公布(选填)","drawDate","text") + f("缴费截止(选填)","payDeadline","text") +
+    f("报名费","fee") + f("规模","quota") + f("中签率","odds") +
+    '<div class="f full"><label>官网报名链接</label><input data-k="url" value="' + esc(r.url) + '"></div>' +
+    '<div class="f full"><label>备注</label><textarea data-k="note" rows="3">' + esc(r.note || "") + '</textarea></div>' +
+  '</div><div class="row" style="margin-top:16px">' +
+    '<button class="btn pri" id="edSave">保存</button>' +
+    '<button class="btn danger" id="edDel">删除此赛事</button>' +
+    '<span class="sp"></span><button class="btn" id="edCancel">取消</button></div>';
+  showModal(body);
+  $("#edSave").onclick = () => {
+    $$("#modalBox [data-k]").forEach(el => {
+      let v = el.value.trim();
+      if(v === "") v = null;
+      r[el.dataset.k] = v;
+    });
+    r.confidence = "manual";
+    save(); hideModal(); render(); toast("已保存");
+  };
+  $("#edDel").onclick = () => {
+    if(!confirm("确认删除「" + r.name + "」?")) return;
+    DB.races = DB.races.filter(x => x.id !== r.id);
+    save(); hideModal(); render(); toast("已删除");
+  };
+  $("#edCancel").onclick = hideModal;
+}
+
+function addRace(){
+  const body = '<h2 style="font-size:17px;margin:0 0 14px">添加赛事</h2><div class="fgrid">' +
+    '<div class="f"><label>赛事名称</label><input id="n_name" placeholder="2027 某某马拉松"></div>' +
+    '<div class="f"><label>城市</label><input id="n_city"></div>' +
+    '<div class="f"><label>国家 / 地区</label><input id="n_country" value="中国"></div>' +
+    '<div class="f"><label>地区</label><select id="n_region"><option>中国</option><option>亚洲</option><option>欧洲</option><option>北美</option><option>大洋洲</option><option>非洲</option><option>南美</option></select></div>' +
+    '<div class="f"><label>比赛日</label><input id="n_race" type="date"></div>' +
+    '<div class="f"><label>赛制</label><select id="n_mode">' + Object.keys(MODE_LABEL).map(k=>'<option value="'+k+'">'+MODE_LABEL[k]+'</option>').join("") + '</select></div>' +
+    '<div class="f"><label>报名开放</label><input id="n_rOpen" placeholder="2027-03-01(可留空)"></div>' +
+    '<div class="f"><label>报名截止</label><input id="n_rClose" placeholder="2027-03-20"></div>' +
+    '<div class="f"><label>抽签公布</label><input id="n_draw" placeholder="可留空"></div>' +
+    '<div class="f"><label>缴费截止</label><input id="n_pay" placeholder="可留空"></div>' +
+    '<div class="f full"><label>官网报名链接</label><input id="n_url" placeholder="https://"></div>' +
+  '</div><div class="row" style="margin-top:16px"><button class="btn pri" id="nSave">添加</button>' +
+  '<span class="sp"></span><button class="btn" id="nCancel">取消</button></div>';
+  showModal(body);
+  $("#nSave").onclick = () => {
+    const name = $("#n_name").value.trim();
+    if(!name){ toast("请填写赛事名称"); return; }
+    DB.races.push({
+      id: "u" + Date.now(),
+      name: name, en: "", city: $("#n_city").value.trim(), country: $("#n_country").value.trim(),
+      region: $("#n_region").value, tier: "", raceDate: $("#n_race").value || null,
+      regOpen: $("#n_rOpen").value.trim() || null, regClose: $("#n_rClose").value.trim() || null,
+      mode: $("#n_mode").value, drawDate: $("#n_draw").value.trim() || null,
+      payDeadline: $("#n_pay").value.trim() || null,
+      fee: null, quota: null, odds: null, url: $("#n_url").value.trim() || "https://",
+      confidence: "manual", userStatus: "watching", note: "手动添加的赛事。"
+    });
+    save(); hideModal(); render(); toast("已添加");
+  };
+  $("#nCancel").onclick = hideModal;
+}
+
+/* ---------- ICS 导出 ---------- */
+function icsEscape(s){
+  return String(s||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\r?\n/g,"\\n");
+}
+function icsStamp(d){
+  const p = n => String(n).padStart(2,"0");
+  return d.getUTCFullYear() + p(d.getUTCMonth()+1) + p(d.getUTCDate()) + "T" +
+         p(d.getUTCHours()) + p(d.getUTCMinutes()) + "00Z";
+}
+function icsDate(d){ const p = n => String(n).padStart(2,"0");
+  return d.getFullYear() + p(d.getMonth()+1) + p(d.getDate()); }
+
+function buildICS(onlyId){
+  const races = onlyId ? DB.races.filter(r => r.id === onlyId) : DB.races;
+  const lines = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Marathon Registrar//CN",
+                 "CALSCALE:GREGORIAN","METHOD:PUBLISH","X-WR-CALNAME:马拉松报名关键日期"];
+  const stamp = icsStamp(new Date());
+  let n = 0;
+  const add = (uid, title, dateStr, desc, alarmMin) => {
+    const d = parseDT(dateStr); if(!d) return;
+    const end = new Date(d.getTime() + 30*60000);
+    lines.push("BEGIN:VEVENT");
+    lines.push("UID:" + uid + n + "@marathon-registrar");
+    lines.push("DTSTAMP:" + stamp);
+    lines.push("DTSTART:" + icsDate(d) + "T" + String(d.getHours()).padStart(2,"0") + String(d.getMinutes()).padStart(2,"0") + "00");
+    lines.push("DTEND:" + icsDate(end) + "T" + String(end.getHours()).padStart(2,"0") + String(end.getMinutes()).padStart(2,"0") + "00");
+    lines.push("SUMMARY:" + icsEscape(title));
+    if(desc) lines.push("DESCRIPTION:" + icsEscape(desc));
+    lines.push("BEGIN:VALARM"); lines.push("TRIGGER:-PT" + alarmMin + "M");
+    lines.push("ACTION:DISPLAY"); lines.push("DESCRIPTION:" + icsEscape(title));
+    lines.push("END:VALARM"); lines.push("END:VEVENT");
+    n++;
+  };
+  races.forEach(r => {
+    const base = r.name + " · " + (r.city || "");
+    if(r.regOpen)  add("open-",  "【报名开放】" + r.name, r.regOpen,  "报名通道开启。官网:" + r.url + "\n" + (MODE_TIP[r.mode]||""), 1440);
+    if(r.regClose) add("close-", "【报名截止】" + r.name, r.regClose, "报名窗口关闭,务必在此前完成提交。官网:" + r.url, 2880);
+    if(r.drawDate) add("draw-",  "【抽签公布】" + r.name, r.drawDate, "抽签结果公布。中签后请立即缴费 —— 付款期通常只有 3–7 天。官网:" + r.url, 1440);
+    if(r.payDeadline) add("pay-", "【缴费截止】" + r.name, r.payDeadline, "⚠️ 最关键的截止时间。逾期名额立即释放,不可恢复。官网:" + r.url, 4320);
+    if(r.raceDate) add("race-",  "【比赛日】" + r.name, r.raceDate, base + "\n官网:" + r.url, 1440);
+  });
+  lines.push("END:VCALENDAR");
+  return lines.join("\r\n");
+}
+function download(name, text, mime){
+  const blob = new Blob([text], { type: mime || "text/plain;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 400);
+}
+
+/* ---------- 浏览器通知 ---------- */
+function requestNotif(){
+  if(!("Notification" in window)){ toast("当前浏览器不支持通知"); return; }
+  Notification.requestPermission().then(p => {
+    if(p === "granted"){
+      toast("已开启。只要本页面在后台打开,临近截止时会弹出提醒");
+      new Notification("马拉松报名指挥中心", { body:"到期提醒已开启。别忘了导出 .ics 到手机日历,那样即使关掉网页也不会漏。" });
+    } else toast("未获得通知权限");
+  });
+}
+function fireDueNotifications(){
+  if(!("Notification" in window) || Notification.permission !== "granted") return;
+  const now = new Date();
+  DB.races.forEach(r => {
+    const s = computeStatus(r, now);
+    if(s.cd === 2 && (s.key === "pay" || s.key === "closing")){
+      const tag = "mr-" + r.id + "-" + s.key;
+      if(sessionStorage.getItem(tag)) return;
+      sessionStorage.setItem(tag, "1");
+      new Notification(s.key === "pay" ? "⚠️ 缴费截止 2 天后" : "报名即将截止",
+        { body: r.name + " · " + (s.key === "pay" ? "缴费截止 " : "报名截止 ") +
+          fmtDate(s.key === "pay" ? r.payDeadline : r.regClose, true) });
+    }
+  });
+}
+
+/* =========================================================
+   6. 事件绑定
+   ========================================================= */
+$$(".tabs button").forEach(b => b.addEventListener("click", () => {
+  $$(".tabs button").forEach(x => x.classList.remove("on"));
+  b.classList.add("on");
+  ["dash","profile","data"].forEach(t => $("#tab-" + t).classList.toggle("hidden", t !== b.dataset.tab));
+}));
+
+$$("#filters button").forEach(b => b.addEventListener("click", () => {
+  $$("#filters button").forEach(x => x.classList.remove("on"));
+  b.classList.add("on"); activeFilter = b.dataset.f; render();
+}));
+
+$("#raceList").addEventListener("click", e => {
+  const btn = e.target.closest("[data-act]"); if(!btn) return;
+  const id = btn.dataset.id, act = btn.dataset.act;
+  if(act === "open") openRace(id);
+  else if(act === "copy") { const r = DB.races.find(x=>x.id===id); copyText(profileBlock(r), "报名资料已复制,粘贴到报名表单即可"); }
+  else if(act === "check") openChecklist(id);
+  else if(act === "edit") openEdit(id);
+  else if(act === "ics") { download("marathon_" + id + ".ics", buildICS(id), "text/calendar;charset=utf-8"); toast("已导出该赛事日历事件"); }
+});
+$("#raceList").addEventListener("change", e => {
+  const sel = e.target.closest('[data-act="status"]'); if(!sel) return;
+  const r = DB.races.find(x => x.id === sel.dataset.id); if(!r) return;
+  r.userStatus = sel.value; save(); render();
+  toast("状态已更新为「" + sel.options[sel.selectedIndex].text + "」");
+});
+
+$("#saveProfile").onclick = () => {
+  DB.profile = Object.assign(DB.profile, readProfile());
+  save(); render();
+  $("#profSaved").textContent = "已保存 ✓";
+  setTimeout(() => $("#profSaved").textContent = "", 2500);
+  toast("档案已保存到本机");
+};
+$("#copyProfile").onclick = () => {
+  DB.profile = Object.assign(DB.profile, readProfile()); save();
+  copyText(profileBlock(null), "通用报名资料已复制");
+};
+
+$("#icsBtn").onclick = () => {
+  const ics = buildICS(null);
+  const events = (ics.match(/BEGIN:VEVENT/g) || []).length;
+  download("marathon_key_dates.ics", ics, "text/calendar;charset=utf-8");
+  toast("已导出 " + events + " 个日历事件,双击文件即可导入日历");
+};
+$("#notifBtn").onclick = requestNotif;
+$("#addRaceBtn").onclick = addRace;
+$("#resetBtn").onclick = () => { if(confirm("将丢弃所有手动修改,恢复为内置种子赛事。继续?")) resetToSeed(false); };
+
+$("#exportBtn").onclick = () => {
+  if(!DB.created) DB.created = new Date().toISOString();
+  DB.updated = new Date().toISOString();
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    schema: "marathon-registrar/v1",
+    profile: DB.profile, races: DB.races, checklists: DB.checklists,
+    _hint: "此文件可交由每日自动化任务读取,用于扫描报名窗口变化并发送邮件告警。"
+  };
+  download("marathon_data.json", JSON.stringify(payload, null, 2), "application/json");
+  toast("已导出 marathon_data.json");
+};
+$("#importBtn").onclick = () => $("#importFile").click();
+$("#importFile").addEventListener("change", e => {
+  const f = e.target.files[0]; if(!f) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    try{
+      const d = JSON.parse(fr.result);
+      if(d.profile) DB.profile = Object.assign({}, EMPTY_PROFILE, d.profile);
+      if(Array.isArray(d.races)) DB.races = d.races;
+      if(d.checklists) DB.checklists = d.checklists;
+      if(d.created) DB.created = d.created;
+      save(); render(); toast("导入成功,共 " + DB.races.length + " 场赛事");
+    }catch(err){ toast("文件解析失败,请确认是本系统导出的 JSON"); }
+    e.target.value = "";
+  };
+  fr.readAsText(f);
+});
+$("#clearBtn").onclick = () => {
+  if(!confirm("将清空本机所有档案与赛事数据,且无法撤销。建议先导出备份。继续?")) return;
+  localStorage.removeItem(LS_KEY);
+  DB = { profile: Object.assign({}, EMPTY_PROFILE), races: [], checklists: {}, created:null, updated:null };
+  resetToSeed(true); save(); render(); toast("已清空并恢复种子数据");
+};
+
+$("#modal").addEventListener("click", e => { if(e.target.id === "modal") hideModal(); });
+document.addEventListener("keydown", e => { if(e.key === "Escape") hideModal(); });
+
+/* =========================================================
+   7. 启动
+   ========================================================= */
+load();
+render();
+fireDueNotifications();
+setInterval(() => { render(); fireDueNotifications(); }, 60000);
+</script>
+</body>
+</html>

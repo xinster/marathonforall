@@ -1,0 +1,17 @@
+# ===== 个人数据 / 本地状态:一律不进仓库 =====
+# WorkBuddy 工作区记忆(项目私记与个人偏好)
+.workbuddy/
+# 发布产物句柄
+.wbapp_*.genie
+# 每日巡检输出:每天重新生成,且含个人关注清单快照
+reports/
+# Agent Mail 开通记录:含个人邮箱地址
+AGENT_MAIL_SETUP.md
+
+# ===== 通用 =====
+.DS_Store
+Thumbs.db
+node_modules/
+*.log
+.env
+.env.*

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 全球马拉松赛历 · 10-12 月</title>
+<style>
+  :root{
+    --bg:#f5f6f8;
+    --panel:#ffffff;
+    --ink:#1b1f27;
+    --ink-2:#4a5262;
+    --ink-3:#8b94a6;
+    --line:#e5e8ee;
+    --gold:#b8860b;
+    --gold-bg:#fdf6e3;
+    --cn:#c0392b;
+    --cn-bg:#fdecea;
+    --asia:#0f7b6c;
+    --asia-bg:#e6f4f1;
+    --eu:#2f5fa8;
+    --eu-bg:#eaf0fa;
+    --na:#8e44ad;
+    --na-bg:#f4ecf9;
+    --other:#7a7f8c;
+    --other-bg:#eef0f3;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
+    font-size:14px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:44px 24px 72px;}
+
+  header.top{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:26px;}
+  h1{font-size:30px;line-height:1.25;margin:0 0 8px;letter-spacing:-.4px;}
+  h1 span{color:var(--ink-3);font-weight:400;}
+  .sub{color:var(--ink-2);font-size:14px;margin:0;}
+  .sub b{color:var(--ink);}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:22px 0 26px;}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
+  .stat .n{font-size:24px;font-weight:700;letter-spacing:-.5px;line-height:1.2;}
+  .stat .l{font-size:12px;color:var(--ink-3);margin-top:2px;}
+
+  .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:26px;}
+  .filters button{
+    font:inherit;font-size:13px;padding:6px 14px;border-radius:999px;
+    border:1px solid var(--line);background:var(--panel);color:var(--ink-2);
+    cursor:pointer;transition:.15s;
+  }
+  .filters button:hover{border-color:#c3c9d4;color:var(--ink);}
+  .filters button.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600;}
+
+  .month{margin-bottom:34px;}
+  .month h2{
+    font-size:18px;margin:0 0 12px;padding-left:12px;border-left:4px solid var(--ink);
+    display:flex;align-items:baseline;gap:10px;
+  }
+  .month h2 em{font-style:normal;font-size:12px;color:var(--ink-3);font-weight:400;}
+
+  table{width:100%;border-collapse:collapse;background:var(--panel);
+        border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+  thead th{
+    text-align:left;font-size:11px;letter-spacing:.8px;text-transform:uppercase;
+    color:var(--ink-3);font-weight:600;padding:10px 14px;background:#fafbfc;
+    border-bottom:1px solid var(--line);white-space:nowrap;
+  }
+  tbody td{padding:9px 14px;border-bottom:1px solid #f0f2f6;vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:#fafbfd;}
+  td.date{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink-2);font-size:13px;width:96px;}
+  td.date b{color:var(--ink);}
+  td.name{font-weight:500;}
+  td.place{color:var(--ink-2);font-size:13px;}
+  td.tag{width:96px;white-space:nowrap;}
+
+  .badge{display:inline-block;font-size:11px;line-height:1.5;padding:1px 8px;border-radius:999px;
+         border:1px solid transparent;font-weight:600;}
+  .b-gold{background:var(--gold-bg);color:var(--gold);border-color:#f0e2b8;}
+  .b-cn{background:var(--cn-bg);color:var(--cn);border-color:#f6d5d1;}
+  .b-asia{background:var(--asia-bg);color:var(--asia);border-color:#cfe9e3;}
+  .b-eu{background:var(--eu-bg);color:var(--eu);border-color:#d6e1f4;}
+  .b-na{background:var(--na-bg);color:var(--na);border-color:#e6d9f0;}
+  .b-other{background:var(--other-bg);color:var(--other);border-color:#e0e3e8;}
+
+  .star{color:var(--gold);font-weight:700;}
+
+  footer{margin-top:12px;padding-top:20px;border-top:1px solid var(--line);
+         color:var(--ink-3);font-size:12px;line-height:1.9;}
+  footer b{color:var(--ink-2);}
+
+  .hidden{display:none;}
+  @media (max-width:720px){
+    .wrap{padding:28px 16px 56px;}
+    h1{font-size:23px;}
+    .stats{grid-template-columns:repeat(2,1fr);}
+    thead th:nth-child(3),tbody td:nth-child(3){display:none;}
+    td.tag{width:auto;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>2026 全球马拉松赛历 <span>· 10 月 — 12 月</span></h1>
+    <p class="sub">覆盖 <b>中国 · 亚洲 · 欧洲 · 北美 · 其他地区</b>,共 <b>162</b> 场赛事 · 数据截至 <b>2026 年 10 月 6 日</b></p>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="n">162</div><div class="l">收录赛事</div></div>
+    <div class="stat"><div class="n">21</div><div class="l">白金标 / 金标</div></div>
+    <div class="stat"><div class="n">59</div><div class="l">中国境内赛事</div></div>
+    <div class="stat"><div class="n">86</div><div class="l">距年底天数</div></div>
+  </div>
+
+  <div class="filters" id="filters">
+    <button class="on" data-f="all">全部</button>
+    <button data-f="maj">大满贯 / 白金标</button>
+    <button data-f="cn">中国</button>
+    <button data-f="asia">亚洲其他</button>
+    <button data-f="eu">欧洲</button>
+    <button data-f="na">北美</button>
+    <button data-f="other">其他地区</button>
+  </div>
+
+  <!-- ============ 十月 ============ -->
+  <section class="month">
+    <h2>十月 2026 <em>秋季大赛高峰 · 芝加哥 + 北京 + 阿姆斯特丹同月登场</em></h2>
+    <table>
+      <thead><tr><th>日期</th><th>赛事名称</th><th>地点</th><th>标签</th></tr></thead>
+      <tbody>
+        <tr data-r="eu"><td class="date"><b>10/04</b> 周日</td><td class="name">布鲁塞尔马拉松</td><td class="place">比利时 · 布鲁塞尔</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="na"><td class="date"><b>10/04</b> 周日</td><td class="name">双城马拉松 Twin Cities</td><td class="place">美国 · 明尼阿波利斯</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="na"><td class="date"><b>10/04</b> 周日</td><td class="name">波特兰马拉松</td><td class="place">美国 · 波特兰</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>10/04</b> 周日</td><td class="name">吉隆坡马拉松</td><td class="place">马来西亚 · 吉隆坡</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="na"><td class="date"><b>10/04</b> 周日</td><td class="name">魁北克城马拉松</td><td class="place">加拿大 · 魁北克城</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>10/10</b> 周六</td><td class="name">里斯本马拉松</td><td class="place">葡萄牙 · 里斯本</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>10/10</b> 周六</td><td class="name">加德满都马拉松</td><td class="place">尼泊尔 · 加德满都</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="maj na"><td class="date"><b>10/11</b> 周日</td><td class="name"><span class="star">★</span> 芝加哥马拉松</td><td class="place">美国 · 芝加哥</td><td class="tag"><span class="badge b-gold">大满贯</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>10/11</b> 周日</td><td class="name">布达佩斯马拉松</td><td class="place">匈牙利 · 布达佩斯</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="na"><td class="date"><b>10/11</b> 周日</td><td class="name">蒙特利尔马拉松</td><td class="place">加拿大 · 蒙特利尔</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>10/11</b> 周日</td><td class="name">埃因霍温马拉松</td><td class="place">荷兰 · 埃因霍温</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>10/11</b> 周日</td><td class="name">哥德堡马拉松</td><td class="place">瑞典 · 哥德堡</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="na"><td class="date"><b>10/11</b> 周日</td><td class="name">丹佛马拉松</td><td class="place">美国 · 丹佛</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>10/11</b> 周日</td><td class="name">天津马拉松</td><td class="place">中国 · 天津</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="maj eu"><td class="date"><b>10/18</b> 周日</td><td class="name"><span class="star">★</span> 阿姆斯特丹马拉松</td><td class="place">荷兰 · 阿姆斯特丹</td><td class="tag"><span class="badge b-gold">白金标</span></td></tr>
+        <tr data-r="maj cn"><td class="date"><b>10/18</b> 周日</td><td class="name"><span class="star">★</span> 北京马拉松</td><td class="place">中国 · 北京</td><td class="tag"><span class="badge b-gold">金标</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>10/18</b> 周日</td><td class="name">西安马拉松</td><td class="place">中国 · 西安</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>10/18</b> 周日</td><td class="name">黄河口(东营)马拉松</td><td class="place">中国 · 山东东营</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>10/18</b> 周日</td><td class="name">郑州马拉松</td><td class="place">中国 · 郑州</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>10/18</b> 周日</td><td class="name">烟台马拉松</td><td class="place">中国 · 烟台</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>10/18</b> 周日</td><td class="name">丽江雪山马拉松</td><td class="place">中国 · 云南丽江</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>10/18</b> 周日</td><td class="name">嘉兴马拉松</td><td class="place">中国 · 浙江嘉兴</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>10/18</b> 周日</td><td class="name">济南马拉松 <em style="color:#8b94a6;font-style:normal">(日期待定)</em></td><td class="place">中国 · 济南</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="na"><td class="date"><b>10/18</b> 周日</td><td class="name">多伦多湖滨马拉松</td><td class="place">加拿大 · 多伦多</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>10/18</b> 周日</td><td class="name">帕尔马马拉松(马略卡)</td><td class="place">西班牙 · 马略卡</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>10/18</b> 周日</td><td class="name">那不勒斯马拉松</td><td class="place">意大利 · 那不勒斯</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>10/18</b> 周日</td><td class="name">帕尔马马拉松</td><td class="place">意大利 · 帕尔马</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="maj eu"><td class="date"><b>10/25</b> 周日</td><td class="name"><span class="star">★</span> 法兰克福马拉松</td><td class="place">德国 · 法兰克福</td><td class="tag"><span class="badge b-gold">白金标</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>10/25</b> 周日</td><td class="name">威尼斯马拉松(第 40 届)</td><td class="place">意大利 · 威尼斯</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="maj eu"><td class="date"><b>10/25</b> 周日</td><td class="name"><span class="star">★</span> 都柏林马拉松</td><td class="place">爱尔兰 · 都柏林</td><td class="tag"><span class="badge b-gold">精英标</span></td></tr>
+        <tr data-r="maj na"><td class="date"><b>10/25</b> 周日</td><td class="name"><span class="star">★</span> 海军陆战队马拉松</td><td class="place">美国 · 华盛顿特区 / 阿灵顿</td><td class="tag"><span class="badge b-gold">标牌</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>10/25</b> 周日</td><td class="name">横滨马拉松</td><td class="place">日本 · 横滨</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>10/25</b> 周日</td><td class="name">春川马拉松</td><td class="place">韩国 · 春川</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="maj cn"><td class="date"><b>10/25</b> 周日</td><td class="name"><span class="star">★</span> 成都马拉松</td><td class="place">中国 · 成都</td><td class="tag"><span class="badge b-gold">金标</span></td></tr>
+        <tr data-r="maj cn"><td class="date"><b>10/25</b> 周日</td><td class="name"><span class="star">★</span> 长沙马拉松</td><td class="place">中国 · 长沙</td><td class="tag"><span class="badge b-gold">金标</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>10/25</b> 周日</td><td class="name">宝鸡马拉松</td><td class="place">中国 · 陕西宝鸡</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>10/25</b> 周日</td><td class="name">北京怀柔长城马拉松</td><td class="place">中国 · 北京怀柔</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>10/25</b> 周日</td><td class="name">青岛胶州湾大桥马拉松</td><td class="place">中国 · 青岛</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>10/25</b> 周日</td><td class="name">洛桑马拉松</td><td class="place">瑞士 · 洛桑</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>10/25</b> 周日</td><td class="name">卢塞恩马拉松</td><td class="place">瑞士 · 卢塞恩</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>10/25</b> 周日</td><td class="name">德累斯顿马拉松</td><td class="place">德国 · 德累斯顿</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>10/25</b> 周日</td><td class="name">地拉那马拉松</td><td class="place">阿尔巴尼亚 · 地拉那</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="na"><td class="date"><b>10/25</b> 周日</td><td class="name">尼亚加拉瀑布马拉松</td><td class="place">加拿大 · 尼亚加拉瀑布城</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="other"><td class="date"><b>10/25</b> 周日</td><td class="name">卡萨布兰卡马拉松</td><td class="place">摩洛哥 · 卡萨布兰卡</td><td class="tag"><span class="badge b-other">非洲</span></td></tr>
+        <tr data-r="other"><td class="date"><b>10/25</b> 周日</td><td class="name">内罗毕马拉松</td><td class="place">肯尼亚 · 内罗毕</td><td class="tag"><span class="badge b-other">非洲</span></td></tr>
+        <tr data-r="other"><td class="date"><b>10/25</b> 周日</td><td class="name">塞拉利昂马拉松</td><td class="place">塞拉利昂 · 马克尼</td><td class="tag"><span class="badge b-other">非洲</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>10/31</b> 周六</td><td class="name">广安马拉松</td><td class="place">中国 · 四川广安</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============ 十一月 ============ -->
+  <section class="month">
+    <h2>十一月 2026 <em>纽约压轴 · 中国赛事南移 · 欧洲收官经典扎堆</em></h2>
+    <table>
+      <thead><tr><th>日期</th><th>赛事名称</th><th>地点</th><th>标签</th></tr></thead>
+      <tbody>
+        <tr data-r="maj na"><td class="date"><b>11/01</b> 周日</td><td class="name"><span class="star">★</span> 纽约马拉松</td><td class="place">美国 · 纽约</td><td class="tag"><span class="badge b-gold">大满贯</span></td></tr>
+        <tr data-r="maj cn"><td class="date"><b>11/01</b> 周日</td><td class="name"><span class="star">★</span> 杭州马拉松</td><td class="place">中国 · 杭州</td><td class="tag"><span class="badge b-gold">金标</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/01</b> 周日</td><td class="name">常州西太湖马拉松</td><td class="place">中国 · 常州</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/01</b> 周日</td><td class="name">宁波马拉松</td><td class="place">中国 · 宁波</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/01</b> 周日</td><td class="name">新余仙女湖马拉松</td><td class="place">中国 · 江西新余</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/01</b> 周日</td><td class="name">宜昌马拉松</td><td class="place">中国 · 湖北宜昌</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>11/01</b> 周日</td><td class="name">JTBC 首尔马拉松</td><td class="place">韩国 · 首尔</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="other"><td class="date"><b>11/01</b> 周日</td><td class="name">奥克兰马拉松</td><td class="place">新西兰 · 奥克兰</td><td class="tag"><span class="badge b-other">大洋洲</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>11/01</b> 周日</td><td class="name">图卢兹马拉松</td><td class="place">法国 · 图卢兹</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="maj asia"><td class="date"><b>11/02</b> 周一</td><td class="name"><span class="star">★</span> 伊斯坦布尔马拉松</td><td class="place">土耳其 · 伊斯坦布尔</td><td class="tag"><span class="badge b-gold">金标</span></td></tr>
+        <tr data-r="na"><td class="date"><b>11/07</b> 周六</td><td class="name">印第安纳波利斯 Monumental 马拉松</td><td class="place">美国 · 印第安纳波利斯</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>11/08</b> 周日</td><td class="name">雅典经典马拉松</td><td class="place">希腊 · 雅典</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>11/08</b> 周日</td><td class="name">尼斯-戛纳马拉松</td><td class="place">法国 · 尼斯 / 戛纳</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>11/08</b> 周日</td><td class="name">波尔图马拉松</td><td class="place">葡萄牙 · 波尔图</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>11/08</b> 周日</td><td class="name">马拉加马拉松</td><td class="place">西班牙 · 马拉加</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>11/08</b> 周日</td><td class="name">拉文纳马拉松</td><td class="place">意大利 · 拉文纳</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>11/08</b> 周日</td><td class="name">马焦雷湖马拉松</td><td class="place">意大利 · 韦尔巴尼亚</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>11/08</b> 周日</td><td class="name">曼彻斯特城市马拉松</td><td class="place">英国 · 曼彻斯特</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="maj cn"><td class="date"><b>11/08</b> 周日</td><td class="name"><span class="star">★</span> 南昌马拉松</td><td class="place">中国 · 南昌</td><td class="tag"><span class="badge b-gold">金标</span></td></tr>
+        <tr data-r="maj cn"><td class="date"><b>11/08</b> 周日</td><td class="name"><span class="star">★</span> 高淳马拉松</td><td class="place">中国 · 南京高淳</td><td class="tag"><span class="badge b-gold">标牌</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/08</b> 周日</td><td class="name">合肥马拉松</td><td class="place">中国 · 合肥</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/08</b> 周日</td><td class="name">郴州马拉松</td><td class="place">中国 · 湖南郴州</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>11/08</b> 周日</td><td class="name">福冈马拉松</td><td class="place">日本 · 福冈</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>11/08</b> 周日</td><td class="name">冈山马拉松</td><td class="place">日本 · 冈山</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>11/08</b> 周日</td><td class="name">千叶跨海大桥马拉松</td><td class="place">日本 · 千叶</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>11/08</b> 周日</td><td class="name">萨马尔罕马拉松</td><td class="place">乌兹别克斯坦 · 萨马尔罕</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="na"><td class="date"><b>11/08</b> 周日</td><td class="name">瓜达拉哈拉马拉松</td><td class="place">墨西哥 · 瓜达拉哈拉</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="other"><td class="date"><b>11/12</b> 周四</td><td class="name">The Great World Race(7 大洲 7 马)</td><td class="place">全球 · 七大洲连跑</td><td class="tag"><span class="badge b-other">特别赛</span></td></tr>
+        <tr data-r="other"><td class="date"><b>11/14</b> 周六</td><td class="name">皇后镇马拉松</td><td class="place">新西兰 · 皇后镇</td><td class="tag"><span class="badge b-other">大洋洲</span></td></tr>
+        <tr data-r="na"><td class="date"><b>11/14</b> 周六</td><td class="name">里士满马拉松</td><td class="place">美国 · 弗吉尼亚里士满</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="na"><td class="date"><b>11/14</b> 周六</td><td class="name">夏洛特马拉松</td><td class="place">美国 · 北卡夏洛特</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="na"><td class="date"><b>11/14</b> 周六</td><td class="name">新奥尔良马拉松</td><td class="place">美国 · 新奥尔良</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>11/15</b> 周日</td><td class="name">神户马拉松</td><td class="place">日本 · 神户</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/15</b> 周日</td><td class="name">桂林马拉松</td><td class="place">中国 · 广西桂林</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/15</b> 周日</td><td class="name">武汉光谷马拉松</td><td class="place">中国 · 武汉</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/15</b> 周日</td><td class="name">苏州马拉松</td><td class="place">中国 · 江苏苏州</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/15</b> 周日</td><td class="name">台州马拉松</td><td class="place">中国 · 浙江台州</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/15</b> 周日</td><td class="name">建德马拉松</td><td class="place">中国 · 杭州建德</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/15</b> 周日</td><td class="name">天目湖马拉松</td><td class="place">中国 · 常州溧阳</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="maj cn"><td class="date"><b>11/15</b> 周日</td><td class="name"><span class="star">★</span> 港珠澳大桥半程马拉松</td><td class="place">中国香港 · 港珠澳大桥</td><td class="tag"><span class="badge b-gold">标牌</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>11/15</b> 周日</td><td class="name">维罗纳马拉松</td><td class="place">意大利 · 维罗纳</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>11/15</b> 周日</td><td class="name">巴勒莫马拉松</td><td class="place">意大利 · 巴勒莫</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>11/15</b> 周日</td><td class="name">曼谷邦盛马拉松 Bangsaen42</td><td class="place">泰国 · 春武里</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>11/15</b> 周日</td><td class="name">婆罗浮屠马拉松</td><td class="place">印度尼西亚 · 马格朗</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="na"><td class="date"><b>11/21</b> 周六</td><td class="name">费城马拉松</td><td class="place">美国 · 费城</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="maj cn"><td class="date"><b>11/22</b> 周日</td><td class="name"><span class="star">★</span> 南京马拉松</td><td class="place">中国 · 南京</td><td class="tag"><span class="badge b-gold">金标</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/22</b> 周日</td><td class="name">温州马拉松</td><td class="place">中国 · 浙江温州</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/22</b> 周日</td><td class="name">衢州马拉松</td><td class="place">中国 · 浙江衢州</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/22</b> 周日</td><td class="name">义乌马拉松</td><td class="place">中国 · 浙江义乌</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/22</b> 周日</td><td class="name">六安马拉松</td><td class="place">中国 · 安徽六安</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/22</b> 周日</td><td class="name">中国-东盟马拉松(防城港)</td><td class="place">中国 · 广西防城港</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/22</b> 周日</td><td class="name">永定土楼马拉松</td><td class="place">中国 · 福建龙岩永定</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/22</b> 周日</td><td class="name">南充嘉陵江马拉松</td><td class="place">中国 · 四川南充</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/22</b> 周日</td><td class="name">玉溪抚仙湖半程马拉松</td><td class="place">中国 · 云南玉溪</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/22</b> 周日</td><td class="name">海南东方半程马拉松</td><td class="place">中国 · 海南东方</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>11/22</b> 周日</td><td class="name">下龙湾世界遗产马拉松</td><td class="place">越南 · 下龙</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>11/22</b> 周日</td><td class="name">筑波马拉松</td><td class="place">日本 · 筑波</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>11/22</b> 周日</td><td class="name">福知山马拉松</td><td class="place">日本 · 福知山</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>11/22</b> 周日</td><td class="name">那空叻差是玛马拉松</td><td class="place">泰国 · 呵叻</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>11/22</b> 周日</td><td class="name">圣塞瓦斯蒂安马拉松</td><td class="place">西班牙 · 圣塞瓦斯蒂安</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="na"><td class="date"><b>11/22</b> 周日</td><td class="name">太空海岸马拉松</td><td class="place">美国 · 佛罗里达</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>11/23</b> 周一</td><td class="name">大田原马拉松</td><td class="place">日本 · 栃木大田原</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="na"><td class="date"><b>11/28</b> 周六</td><td class="name">西雅图马拉松</td><td class="place">美国 · 西雅图</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="other"><td class="date"><b>11/28</b> 周六</td><td class="name">南极极地赛 Antarctic Polar Race</td><td class="place">南极</td><td class="tag"><span class="badge b-other">特别赛</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>11/29</b> 周日</td><td class="name">曼谷马拉松 Amazing Thailand</td><td class="place">泰国 · 曼谷</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>11/29</b> 周日</td><td class="name">佛罗伦萨马拉松</td><td class="place">意大利 · 佛罗伦萨</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>11/29</b> 周日</td><td class="name">都灵城市马拉松</td><td class="place">意大利 · 都灵</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>11/29</b> 周日</td><td class="name">拉罗谢尔马拉松</td><td class="place">法国 · 拉罗谢尔</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>11/29</b> 周日</td><td class="name">艾哈迈达巴德马拉松</td><td class="place">印度 · 艾哈迈达巴德</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>11/29</b> 周日</td><td class="name">加尔各答马拉松</td><td class="place">印度 · 加尔各答</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>11/29</b> 周日</td><td class="name">贝鲁特马拉松</td><td class="place">黎巴嫩 · 贝鲁特</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/29</b> 周日</td><td class="name">惠州马拉松</td><td class="place">中国 · 广东惠州</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/29</b> 周日</td><td class="name">千岛湖马拉松</td><td class="place">中国 · 浙江淳安</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>11/29</b> 周日</td><td class="name">婺源马拉松</td><td class="place">中国 · 江西婺源</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============ 十二月 ============ -->
+  <section class="month">
+    <h2>十二月 2026 <em>年度收官 · 上海 + 瓦伦西亚 + CIM 同日对决</em></h2>
+    <table>
+      <thead><tr><th>日期</th><th>赛事名称</th><th>地点</th><th>标签</th></tr></thead>
+      <tbody>
+        <tr data-r="na"><td class="date"><b>12/05</b> 周六</td><td class="name">圣裘德孟菲斯马拉松</td><td class="place">美国 · 孟菲斯</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>12/05</b> 周六</td><td class="name">侏罗纪海岸马拉松</td><td class="place">英国 · 多塞特</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="maj cn"><td class="date"><b>12/06</b> 周日</td><td class="name"><span class="star">★</span> 上海马拉松</td><td class="place">中国 · 上海</td><td class="tag"><span class="badge b-gold">白金标</span></td></tr>
+        <tr data-r="maj eu"><td class="date"><b>12/06</b> 周日</td><td class="name"><span class="star">★</span> 瓦伦西亚马拉松</td><td class="place">西班牙 · 瓦伦西亚</td><td class="tag"><span class="badge b-gold">白金标</span></td></tr>
+        <tr data-r="maj na"><td class="date"><b>12/06</b> 周日</td><td class="name"><span class="star">★</span> 加州国际马拉松 CIM</td><td class="place">美国 · 福尔瑟姆 → 萨克拉门托</td><td class="tag"><span class="badge b-gold">精英标</span></td></tr>
+        <tr data-r="na"><td class="date"><b>12/06</b> 周日</td><td class="name">圣安东尼奥马拉松</td><td class="place">美国 · 圣安东尼奥</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>12/06</b> 周日</td><td class="name">新加坡马拉松 (BYD)</td><td class="place">新加坡</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="maj asia"><td class="date"><b>12/06</b> 周日</td><td class="name"><span class="star">★</span> 福冈国际马拉松</td><td class="place">日本 · 福冈</td><td class="tag"><span class="badge b-gold">金标</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>12/06</b> 周日</td><td class="name">防府读卖马拉松</td><td class="place">日本 · 山口防府</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>12/06</b> 周日</td><td class="name">那霸马拉松</td><td class="place">日本 · 冲绳那霸</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>12/06</b> 周日</td><td class="name">湘南国际马拉松</td><td class="place">日本 · 神奈川湘南</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>12/06</b> 周日</td><td class="name">深圳马拉松</td><td class="place">中国 · 广东深圳</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>12/06</b> 周日</td><td class="name">上合昆明马拉松</td><td class="place">中国 · 云南昆明</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>12/06</b> 周日</td><td class="name">厦门海沧半程马拉松</td><td class="place">中国 · 福建厦门</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>12/06</b> 周日</td><td class="name">湛江半程马拉松</td><td class="place">中国 · 广东湛江</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>12/06</b> 周日</td><td class="name">玉环半程马拉松</td><td class="place">中国 · 浙江玉环</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>12/12</b> 周六</td><td class="name">阿布扎比马拉松 (ADNOC)</td><td class="place">阿联酋 · 阿布扎比</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>12/12</b> 周六</td><td class="name">兰卡威国际半程马拉松</td><td class="place">马来西亚 · 兰卡威</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="na"><td class="date"><b>12/13</b> 周日</td><td class="name">檀香山马拉松</td><td class="place">美国 · 夏威夷檀香山</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>12/13</b> 周日</td><td class="name">富士山马拉松(第 15 届)</td><td class="place">日本 · 山梨河口湖</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>12/13</b> 周日</td><td class="name">奈良马拉松</td><td class="place">日本 · 奈良</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="na"><td class="date"><b>12/13</b> 周日</td><td class="name">图森马拉松</td><td class="place">美国 · 亚利桑那图森</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="na"><td class="date"><b>12/13</b> 周日</td><td class="name">宝马达拉斯马拉松</td><td class="place">美国 · 达拉斯</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="na"><td class="date"><b>12/13</b> 周日</td><td class="name">火箭城马拉松</td><td class="place">美国 · 阿拉巴马亨茨维尔</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="na"><td class="date"><b>12/13</b> 周日</td><td class="name">密西西比湾岸马拉松</td><td class="place">美国 · 密西西比</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>12/13</b> 周日</td><td class="name">雷焦艾米利亚马拉松</td><td class="place">意大利 · 雷焦艾米利亚</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>12/13</b> 周日</td><td class="name">卡塔尼亚马拉松</td><td class="place">意大利 · 卡塔尼亚</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>12/13</b> 周日</td><td class="name">梅尔辛马拉松</td><td class="place">土耳其 · 梅尔辛</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>12/13</b> 周日</td><td class="name">青岛太平洋马拉松</td><td class="place">中国 · 山东青岛</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="other"><td class="date"><b>12/13</b> 周日</td><td class="name">南极冰上马拉松</td><td class="place">南极 · 联合冰川</td><td class="tag"><span class="badge b-other">特别赛</span></td></tr>
+        <tr data-r="eu"><td class="date"><b>12/19</b> 周六</td><td class="name">朴茨茅斯海岸马拉松</td><td class="place">英国 · 朴茨茅斯</td><td class="tag"><span class="badge b-eu">欧洲</span></td></tr>
+        <tr data-r="maj cn"><td class="date"><b>12/20</b> 周日</td><td class="name"><span class="star">★</span> 广州马拉松</td><td class="place">中国 · 广州</td><td class="tag"><span class="badge b-gold">金标</span></td></tr>
+        <tr data-r="maj cn"><td class="date"><b>12/20</b> 周日</td><td class="name"><span class="star">★</span> 台北马拉松</td><td class="place">中国台湾 · 台北</td><td class="tag"><span class="badge b-gold">金标</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>12/20</b> 周日</td><td class="name">南宁马拉松</td><td class="place">中国 · 广西南宁</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>12/20</b> 周日</td><td class="name">深圳南山半程马拉松</td><td class="place">中国 · 广东深圳</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>12/20</b> 周日</td><td class="name">厦门环东半程马拉松</td><td class="place">中国 · 福建厦门</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>12/20</b> 周日</td><td class="name">重庆半程马拉松</td><td class="place">中国 · 重庆</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="asia"><td class="date"><b>12/20</b> 周日</td><td class="name">清迈马拉松</td><td class="place">泰国 · 清迈</td><td class="tag"><span class="badge b-asia">亚洲</span></td></tr>
+        <tr data-r="na"><td class="date"><b>12/20</b> 周日</td><td class="name">Holly Jolly 马拉松</td><td class="place">美国 · 洛杉矶</td><td class="tag"><span class="badge b-na">北美</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>12/27</b> 周日</td><td class="name">福州马拉松</td><td class="place">中国 · 福建福州</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+        <tr data-r="cn"><td class="date"><b>12/27</b> 周日</td><td class="name">海口马拉松</td><td class="place">中国 · 海南海口</td><td class="tag"><span class="badge b-cn">中国</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer>
+    <b>使用说明</b><br>
+    · 点击上方标签可按地区筛选。★ 标记为世界马拉松大满贯 / 世界田联白金·金标赛事。<br>
+    · <b>剩余两场世界马拉松大满贯(2026 赛季)</b>:芝加哥马拉松(10/11)、纽约马拉松(11/01)。上海马拉松为 2027 年起的候选大满贯赛事。<br>
+    · 数据来源:世界田联路跑标牌赛事日历(Abbott World Marathon Majors)、各赛事官方公告及中国田协赛事日历。<br>
+    · <b>日期以组委会官方公告为准</b> —— 标注"待定"的赛事尚未最终官宣,部分赛事存在改期可能(如南昌、合肥、济南等)。<br>
+    · 为保证篇幅可控,本表聚焦全程马拉松,兼收少量具代表性的半程赛事;各地小型路跑赛事未全部收录。<br>
+    · 想据此管理报名窗口?打开同目录下的 <b>marathon_registrar.html</b>(马拉松报名指挥中心),
+      可登记个人档案、跟踪报名开放/截止、监控中签后缴费期限,并把关键日期导出到手机日历。
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  var btns=document.querySelectorAll('#filters button');
+  var rows=document.querySelectorAll('tbody tr');
+  var sections=document.querySelectorAll('.month');
+  btns.forEach(function(b){
+    b.addEventListener('click',function(){
+      btns.forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on');
+      var f=b.getAttribute('data-f');
+      rows.forEach(function(r){
+        var list=(r.getAttribute('data-r')||'').split(' ');
+        r.classList.toggle('hidden', f!=='all' && list.indexOf(f)===-1);
+      });
+      sections.forEach(function(s){
+        var vis=s.querySelectorAll('tbody tr:not(.hidden)').length;
+        s.classList.toggle('hidden', vis===0);
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

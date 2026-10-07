@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>马拉松与越野赛跟踪台 — 报名窗口跟踪与提醒</title>
+<meta name="description" content="关注你想要的马拉松与越野赛事,自动跟踪报名开放、截止、抽签公布与缴费截止,并在关键节点提醒你。">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><span class="logo"></span>赛事跟踪台<span class="badge">本地版</span></div>
+  <nav class="nav">
+    <button data-tab="dash">看板</button>
+    <button data-tab="lib">赛事库</button>
+    <button data-tab="mine">我的关注<span id="navCount" class="cnt" style="display:none"></span></button>
+    <button data-tab="profile">我的档案</button>
+    <button data-tab="notify">提醒与导出</button>
+  </nav>
+  <button class="acct-chip" data-act="account">本地模式</button>
+</header>
+
+<main>
+
+  <!-- ============================ 看板 ============================ -->
+  <section id="view-dash" class="view on">
+    <div class="hero">
+      <div>
+        <h1 id="todayLabel">—</h1>
+        <p class="sub">每天该做什么,系统已经替你算好 —— 你只需要在关键节点出现。</p>
+      </div>
+      <div class="hero-acts">
+        <button class="mini primary" data-tab="lib">去赛事库挑比赛</button>
+        <button class="mini" data-tab="notify">提醒设置</button>
+      </div>
+    </div>
+
+    <div id="actionBanner" class="banner"></div>
+    <div id="kindBar" class="kind-bar"></div>
+    <div id="kpis" class="kpis"></div>
+
+    <div class="cols">
+      <section class="panel">
+        <h3>最该处理的</h3>
+        <div id="dashTop" class="grid one"></div>
+      </section>
+      <aside class="panel side">
+        <h3>接下来 60 天 <span class="muted small" id="timelineCount"></span></h3>
+        <ul id="timeline" class="timeline"></ul>
+      </aside>
+    </div>
+  </section>
+
+  <!-- =========================== 赛事库 =========================== -->
+  <section id="view-lib" class="view">
+    <div id="kindTabs" class="kind-tabs"></div>
+    <div class="filterbar">
+      <input id="libQ" class="search" type="text" placeholder="搜索赛事名称、城市、地区、距离…">
+      <select id="fRegion"></select>
+      <select id="fMonth"></select>
+      <select id="fMode"></select>
+      <label class="chk"><input type="checkbox" id="fOnlyWatch">只看已关注</label>
+      <span id="libCount" class="muted small"></span>
+      <button class="mini primary" data-act="addraceopen">自建赛事</button>
+    </div>
+    <div id="libGrid"></div>
+  </section>
+
+  <!-- ========================== 我的关注 ========================== -->
+  <section id="view-mine" class="view">
+    <div id="mineKind" class="kind-tabs"></div>
+    <div id="mineWrap"></div>
+  </section>
+
+  <!-- =========================== 我的档案 =========================== -->
+  <section id="view-profile" class="view">
+    <div class="cols">
+      <section class="panel">
+        <h3>报名档案</h3>
+        <p class="muted small">用于报名时一键复制,以及自动判断你的材料是否齐全、成绩是否达标。<b>只保存在本机</b>,不会上传。<br>
+          <b>跑马拉松填「全马 / 半马最好成绩」;跑越野赛还要填「最长越野完赛」与「ITRA 表现分」</b> —— 越野赛看的是山地完赛资历,马拉松成绩不能替代。</p>
+        <div id="pForm" class="form-grid"></div>
+      </section>
+      <aside class="panel side">
+        <h3>自查</h3>
+        <div id="pSide"></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ========================= 提醒与导出 ========================= -->
+  <section id="view-notify" class="view">
+    <div class="cols">
+      <section class="panel">
+        <h3>提醒通道</h3>
+        <div id="chList"></div>
+      </section>
+      <aside class="panel side">
+        <h3>推送预览</h3>
+        <p class="muted small" style="margin-bottom:10px">如果此刻推送,你会收到以下内容 —— 系统只在真正需要行动时打扰你。</p>
+        <div id="notifyPreview"></div>
+
+        <hr>
+        <h3>日历订阅</h3>
+        <p class="muted small" id="icsInfo"></p>
+        <button class="mini primary" id="icsAll" data-act="icsAll">导出全部到日历</button>
+        <p class="muted small" style="margin-top:8px">最可靠的方案:导入手机日历后,即使不打开本页面,系统级提醒也不会漏。</p>
+
+        <hr>
+        <h3>备份</h3>
+        <button class="mini" data-act="backup">导出 JSON 备份</button>
+        <button class="mini" data-act="import">导入 JSON 备份</button>
+        <button class="mini danger" data-act="reset">清空全部数据</button>
+      </aside>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <b>关于这个版本</b><br>
+  · 当前为<b>本地版</b>:档案与关注清单保存在你自己的浏览器里,换设备不会自动同步。<br>
+  · 收录<b>马拉松 / 路跑</b>与<b>越野赛</b>两类赛事,<b>全程分类展示</b>:赛事库按类型分区、我的关注可按类型筛选、看板顶部给出两类各自的进行中数量。两类在赛制、资格门槛与材料要求上完全不同 —— 越野赛普遍需要 ITRA 表现分、UTMB 指数或跑石,且赛前强制装备逐项检查。<br>
+  · 日期均标注了可信度:<b>官方公告</b> / 媒体多源 / 按往年推算 / 待公布 —— 最终以组委会官方公告为准。越野赛的报名窗口公布得普遍比路跑晚,「待公布」占比较高属正常。<br>
+  · 状态判断由 <code>assets/engine.js</code> 统一提供,页面、每日巡检脚本与后续小程序共用同一份逻辑,不会出现"网页说待缴费、提醒说已截止"。
+</footer>
+
+<div id="modal" class="modal"><div id="modalBox" class="modal-box"></div></div>
+<div id="toast" class="toast"></div>
+<input type="file" id="importFile" accept=".json,application/json" hidden>
+
+<script src="assets/engine.js"></script>
+<script src="assets/store.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
