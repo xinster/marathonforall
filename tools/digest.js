@@ -34,7 +34,12 @@ const arg = (name, def) => {
   const i = argv.indexOf(name);
   return (i >= 0 && argv[i + 1]) ? argv[i + 1] : def;
 };
-const DATA = path.resolve(arg("--data", path.join(ROOT, "data", "marathon_watchlist.json")));
+const DATA_MAIN = path.join(ROOT, "data", "marathon_watchlist.json");
+const DATA_EXAMPLE = path.join(ROOT, "data", "marathon_watchlist.example.json");
+/* 优先用「活的」关注清单;不存在时回退到入库模板,好让新克隆开箱即可跑通。
+   活文件含个人档案(姓名 / 身份证号 / 手机号),已被 .gitignore 排除 ——
+   仓库里那份是不带个人数据的模板。 */
+const DATA = path.resolve(arg("--data", fs.existsSync(DATA_MAIN) ? DATA_MAIN : DATA_EXAMPLE));
 const OUT = path.resolve(arg("--out", REPORTS));
 let NOW = new Date();
 const dstr = arg("--date", null);
@@ -64,7 +69,16 @@ const kindOf         = ME.kindOf;
 const KIND_LABEL     = ME.KIND_LABEL;
 
 /* ---------- 2. 读数据 + 合并目录 ---------- */
+if (!fs.existsSync(DATA)) {
+  console.error("找不到关注清单: " + DATA +
+    "\n首次使用请先执行: cp data/marathon_watchlist.example.json data/marathon_watchlist.json");
+  process.exit(4);
+}
 const watchData = JSON.parse(fs.readFileSync(DATA, "utf-8"));
+if (path.basename(DATA) === "marathon_watchlist.example.json") {
+  console.warn("⚠ 未找到活的关注清单,本次使用入库模板 " + path.relative(ROOT, DATA) +
+    " —— 个人进度为空,仅用于验证管线。");
+}
 const profile = watchData.profile || {};
 const savedRaces = watchData.races || [];
 

@@ -1,0 +1,316 @@
+# 交接文档 · HANDOVER
+
+> 面向接手这个项目的人(或半年后的自己)。目标:**读完这一份就能改代码,不用先考古。**
+> 配合 `docs/WORKLOG.md`(怎么走到今天的)一起看。
+>
+> 最后更新:2026-10-07
+
+---
+
+## 1. 这是什么
+
+**赛事跟踪台** —— 盯住马拉松 / 越野赛的报名开放、截止、抽签公布、缴费截止,
+在真正需要人行动的那一刻推一条提醒。
+
+- 收录 **60 场**:24 场马拉松 / 路跑 + 36 场全球越野赛(2026–2027 赛季)
+- 形态:**零构建纯静态网站** + **零依赖 Node 脚本**(每日巡检与邮件)
+- 线上:`https://marathon-tracker.app.workbuddy.host/`
+- 仓库:`https://github.com/xinster/marathonforall`
+
+### 它不做什么(想清楚了才做的决定)
+
+**不做代报名、不做自动提交。** 理由:
+
+1. 报名要实名 + 人脸/证件核验,自动化提交必然触发风控
+2. **抽签制下报名先后完全不影响中签率** —— 抢时间不产生任何收益
+3. 代人提交实名信息有合规问题
+
+真正的痛点不是「没抢到」,而是 **中签后忘记缴费** —— 缴费期通常只有 3–7 天,
+逾期名额**立即释放且不可恢复**。绝大多数流掉的名额死在这条线上。
+
+**所以这个项目的核心是状态机 + 提醒,不是表单提交。** 这句话决定了后面所有架构选择。
+
+---
+
+## 2. 五分钟上手
+
+```bash
+# 1. 拿一份自己的数据文件(仓库里的模板不含个人数据)
+cp data/marathon_watchlist.example.json data/marathon_watchlist.json
+
+# 2. 看网站(零构建,直接开)
+open marathon-platform/index.html
+#    或 python3 -m http.server 8000 --directory marathon-platform
+
+# 3. 跑一次巡检(只生成摘要,不发信)
+node tools/digest.js
+
+# 4. 跑测试 —— 应输出 "83 通过 / 0 失败"
+node tests/regression.js
+```
+
+个人数据存在浏览器 `localStorage`,同时可由 `tools/digest.js` 从
+`data/marathon_watchlist.json` 读取用于发信。
+
+---
+
+## 3. 架构
+
+### 唯一不变量:状态判断只写一遍
+
+```
+        ┌──────────────────────────────────────────┐
+        │  marathon-platform/assets/engine.js      │
+        │  纯函数 · 零 DOM · 唯一状态机 + 赛事目录 │
+        └───────────────┬──────────────────────────┘
+                        │ require / window.ME
+        ┌───────────────┼───────────────┬──────────────────┐
+        ▼               ▼               ▼                  ▼
+   assets/app.js   assets/store.js  tools/digest.js   tests/regression.js
+   (界面)          (数据适配)       (每日巡检)        (回归断言)
+                                        │
+                                        ▼
+                                  tools/notify.js  → 邮件
+```
+
+**这是硬约束,不是偏好。** 状态判断写两遍**必然漂移**,会出现
+「网页说待缴费、邮件说已截止」这种最要命的错误。共用一份文件,结构上就不可能漂移。
+
+历史上 `tools/digest.js` 曾经从旧 HTML 里抽 JS —— 结果就是越野赛对邮件**完全不可见**,
+而且随时可能悄悄分叉。已收口。**不要再引入第二份状态判断。**
+
+### 数据分工
+
+| 数据 | 来源 | 说明 |
+|---|---|---|
+| 赛事**事实字段**(窗口 / 抽签日 / 比赛日 / 官网 / 距离) | 引擎 `SEED_ALL` | 赛历更新只改引擎,网页与邮件自动跟随 |
+| **我的进度** `userStatus` | `data/marathon_watchlist.json` | 唯一以 JSON 为准的字段 |
+| 自建赛事 | `data/marathon_watchlist.json` | 引擎里没有的赛事原样纳入 |
+| 个人档案 | 同上(浏览器端在 `localStorage`) | 33 个字段 |
+
+### 目录
+
+```
+marathon-platform/           ★ 产品,线上部署目录
+  index.html                 应用外壳(看板/赛事库/我的关注/我的档案/提醒与导出)
+  assets/engine.js           ★ 唯一状态机 + 60 场赛事种子(纯函数,零 DOM)
+  assets/store.js            数据层 / 存储适配器 —— read()/write() 有 [SEAM] 标记
+  assets/app.js              界面层
+  assets/styles.css          样式(路跑=青绿 --ac,越野=土黄 --amb)
+  README.md                  详细设计与架构说明
+tools/
+  digest.js                  每日巡检:算状态 → Markdown / HTML 邮件 / 紧急清单
+  notify.js                  巡检 + 推送(有紧急项才发信)
+tests/regression.js          83 项断言,任意克隆可跑
+data/
+  marathon_watchlist.example.json   入库模板(无个人数据)
+  marathon_watchlist.json           活的关注清单 —— 已 gitignore,含个人档案
+docs/                        WORKLOG.md + HANDOVER.md
+legacy/                      历史产物,见 legacy/README.md
+```
+
+**依赖顺序固定:`engine.js → store.js → app.js`。三者都不需要构建步骤。**
+
+### 以后接后端
+
+`assets/store.js` 里 `read()` / `write()` 打了 `[SEAM]` 标记 ——
+接后端只有这一个改动点,界面层不用动。
+
+⚠️ **网站与小程序是两个独立应用 → 两个独立云环境,数据默认不共享。**
+小程序是另一套代码(WXML/WXSS/JS + `app.json`),**不能**从 HTML/DOM 转换或重组。
+
+---
+
+## 4. 状态机(15 态)
+
+`computeStatus(race, now)` 返回 `{ key, label, cls, urg, cd, cdLabel, cdDate, note }`。
+
+| key | 标签 | 危急度 | 含义 |
+|---|---|---|---|
+| `pay` | 待缴费 | 🔴 最高 | **已中签 · 缴费截止 ≤ 3 天** —— 过期名额立即释放,不可恢复 |
+| `drawdone` | 结果已公布·待确认 | 🟠 高 | 结果已出但状态仍是「关注中」(7 天内)—— 你可能压根不知道结果出了 |
+| `closing` | 即将截止 | 🟠 高 | 报名截止 ≤ 3 天 |
+| `soon` | 即将开放 | 🔵 中 | 开放 ≤ 7 天,该备材料了 |
+| `open` | 报名中 | 🟢 | 窗口开放中,已知截止日 |
+| `opendeadline` | 报名中·未设截止日 | 🟢 | 已开放但官方未公布截止日 —— **售罄即止** |
+| `waitdraw` | 待抽签 | 🟣 | 已提交,等公布 |
+| `pending` | 已报名·待结果 | 🟣 | 同上(窗口已过) |
+| `notopen` | 未开放 | ⚪ | 开放日未到 |
+| `racing` | 已锁定·待比赛 | 🟢 | 名额已稳,等比赛 |
+| `unknown` | 窗口待公布 / 窗口未记录 | ⚪ | 没有窗口数据(**越野赛常态,不是数据缺失**) |
+| `closed` | 已截止 / 未中签 | ⚪ | 窗口已关 |
+| `lost` | 已逾期·名额释放 | ⚪ | 错过缴费 |
+| `done` | 已完赛 | ⚪ | |
+| `skipped` | 已放弃 | ⚪ | |
+
+> `unknown` 与 `closed` 各有两种标签,按上下文取。
+
+### 「紧急」的定义(改过一次,务必理解)
+
+**紧急 = 有明确时间窗的四类:`pay` / `drawdone` / `soon` / `closing`。**
+
+刻意**不包含** `opendeadline`。原因:越野赛和国内先到先得赛事常年在开放状态
+(某场已开放数月),若计入紧急,**每天都会为同一场报警**,反而把真正的截止日淹没。
+它仍照常出现在摘要、邮件正文与窗口概览里,只是不单独触发发信。
+
+> 早期版本把 `drawdone` 漏了 —— 结果公布后状态走完窗口变成「已截止」,
+> 系统于是显示「已截止」,**把最关键的警报藏在了最平静的标签后面**。已修。
+
+### 赛制
+
+`MODE_LABEL`:`lottery` 抽签制 · `fcfs` 先到先得 · `qualify` 成绩达标制 ·
+`invite` 邀请制 · `stones` 跑石抽签
+
+---
+
+## 5. 越野赛与路跑的三处本质差异
+
+引擎里**按 `kind` 分支**,不是加个标签了事。
+
+| 维度 | 马拉松 / 路跑 | 越野赛 |
+|---|---|---|
+| **赛制** | 抽签 / 先到先得 / 成绩达标 | ITRA 表现分门槛 / **跑石 + UTMB 指数双门槛** / 资格赛制 / 黄金门票 |
+| **资格** | 24 个月内的全马或半马成绩 | **同类距离的山地完赛记录**(路跑成绩通常不被接受) |
+| **材料** | 体检报告、完赛证明 | 追加**强制装备**(头灯+备用电池 / 救生毯 / 冲锋衣 / 哨子 / 水袋 / 备用口粮 / 急救绷带)、夜间行进、换装包 |
+
+- `MODE_LABEL` 有 `stones:"跑石抽签"`
+- `buildChecklist()` 按 `race.kind === "trail"` 分支,UTMB 总决赛走「跑石」、世界系列赛走「UTMB 指数」
+- `profileWarnings()` 按类分支;`maxDistKm()` 解析 `dist` 文本比对档案里的最长越野完赛
+- 档案额外有 4 个字段:`trailMax` / `trailMaxRace` / `trailMaxDate` / `itra`
+
+**已核实的真实门槛:**
+
+- 柴古唐斯括苍:105K ≥ 410 / 50K ≥ 360 / 25K ≥ 260 分
+- 熊猫蜀道山:160K ≥ 500 / 105K ≥ 400 / 60K ≥ 350 / 25K ≥ 249 分
+- 崇礼 168:不设 ITRA 分,按距离阶梯要完赛证书
+
+> ⚠️ **60 场里 31 场是「窗口未记录 / 待公布」—— 这是越野赛的常态节奏,不是数据缺失。**
+> 越野赛的报名窗口公布普遍比路跑晚得多。看到一片 ⚪ 不要以为哪里坏了。
+
+### 分类显示
+
+分类**贯穿全站**,不只是一个筛选器:
+
+- 赛事库:类型切换条;选「全部」时**真的分成两个区块**,每区带一句话差异说明
+- 我的关注:同一套切换条 + 分组标题显示两类占比
+- 看板:类别速览(两类各关注几场、其中几场在窗口里)
+- 邮件:每行 `[越]` 前缀 + 分类统计
+
+**分类判定只走引擎的 `kindOf()`,界面一行硬编码都没有。** 以后要加 Skyrunning、
+山径徒步,只需在引擎里加一个 `kind`,界面自动多出一个分区。
+
+---
+
+## 6. 已知脆弱点
+
+| 位置 | 风险 | 缓解 |
+|---|---|---|
+| `tests/regression.js` 的夹具抽取 | 靠**行号切片**(`sl(10,33)`)从 `legacy/marathon_registrar.html` 抽旧状态机。若有人重排该 HTML 格式,切片错位 → **拿坏数据比对,得出「零漂移」的假绿** | 已加夹具守卫:必须抽出 24 场且 `computeStatus` 可用,否则退出码 3 终止。**改动该文件后务必重跑测试** |
+| 赛事日期 | 大量日期是**按往年推算**(`confidence: "projected"`),不是官方公告 | UI 全程显示可信度标签;对外一律声明「以官方公告为准」 |
+| `data/marathon_watchlist.json` | 含个人档案(姓名 / 身份证号 / 手机号) | **已 gitignore**。入库的只有 `.example.json` 模板。见下节 |
+| 本机 Git 凭据 | 无凭据助手,`git push` 每次都要 token | 见 §8 |
+| 邮件链路 | 依赖外部 Agent Mail CLI 的授权状态 | 授权失效时报错会提示重新授权 |
+| 无头浏览器截图 | 本沙箱**不可用**(见 WORKLOG §11) | 验证 UI 一律用 DOM 存根回归 |
+
+---
+
+## 7. 隐私设计(别破坏它)
+
+```
+data/marathon_watchlist.example.json   ← 入库。34 字段全空,无个人数据
+data/marathon_watchlist.json           ← gitignore。活的,含个人档案
+```
+
+`.gitignore` 还排除:`.workbuddy/`(工作区记忆)、`reports/`(每日摘要含关注清单快照)、
+`AGENT_MAIL_SETUP.md`(含个人邮箱地址)、`.wbapp_*.genie`。
+
+`tools/digest.js` 三级回退:
+
+1. 活的 `marathon_watchlist.json` → 静默使用
+2. 只有模板 → 告警 + 退出码 0(新克隆开箱能跑)
+3. 都没有 → 明确指引 + 退出码 4
+
+**加新文件前先问:这里会不会出现姓名、证件号、手机号、邮箱?** 会 → 加进 `.gitignore`。
+
+### 提交前自查
+
+```bash
+git status --short                        # 看有没有意外文件
+git diff --cached | grep -nE "ghp_|@|身份证"   # 粗筛 token / 邮箱
+```
+
+---
+
+## 8. 推送代码
+
+仓库已配好 remote,但**本机没有存储任何 Git 凭据**,所以:
+
+```bash
+git add -A && git commit -m "..." && git push     # 会要凭据
+```
+
+两条路:
+
+- **用 token**:GitHub → Settings → Developer settings → Personal access tokens →
+  **Tokens (classic)** → 勾 `repo` 即可(创建仓库 + 推送都够)。用完立刻吊销
+- **在自己终端推**:本机 `gh` CLI 不存在,直接 `git push` 也行
+
+> 坑:首次 push 可能报 `CONNECT tunnel failed, response 502` —— 那是沙箱代理隧道偶发失败,
+> **原样重试一次即可**,不是凭据问题,不要重配 proxy。
+
+---
+
+## 9. 待办与开放问题
+
+### 待办
+
+- [ ] **`LICENSE` 未定** —— 公开仓库目前无授权条款。需决策:MIT / Apache-2.0 / 保留所有权利
+- [ ] 微信小程序:需要 AppID 与资质,且必须**新建小程序应用重新构建**(不能从 HTML 转换)
+- [ ] 接后端:走 `assets/store.js` 的 `[SEAM]`;注意网站与小程序是两个独立云环境
+- [ ] `tests/regression.js` 的防漂移基线:理想做法是把当前基线**冻结成 JSON 快照**,
+      之后就能删掉 `legacy/marathon_registrar.html`(现在它既是历史又是夹具,角色混着)
+- [ ] 赛事数据目前**手工维护**在 `engine.js` 的 `SEED_*` 里。若赛历规模再涨,
+      值得考虑外置成 JSON 数据文件 + 校验脚本
+
+### 开放问题
+
+1. **是否要支持多用户?** 现在每个浏览器各存各的 `localStorage`,天然单用户。
+   多用户需要后端 + 登录,是量级变化。**做之前先确认真的需要。**
+2. **越野赛收录要不要继续扩?** 现在 36 场。继续扩的边际价值在于长尾赛事,
+   但维护成本(核实门槛 / 窗口)是非线性的。
+3. **`reports/` 要不要留档?** 现在每天重新生成且被 gitignore。如果需要历史追溯,
+   得另设归档机制。
+
+---
+
+## 10. 交接检查清单
+
+接手后跑一遍,全绿就算环境没问题:
+
+```bash
+node tests/regression.js                  # 期望:83 通过 / 0 失败
+node tools/digest.js                      # 期望:生成 reports/ 下三个文件
+node tools/digest.js --date 2026-10-07    # 期望:有「待缴费」等紧急项
+cp data/marathon_watchlist.example.json data/marathon_watchlist.json  # 首次才需要
+```
+
+| 检查项 | 期望 |
+|---|---|
+| `node tests/regression.js` | `83 通过 / 0 失败` |
+| `tools/digest.js` 退出码 | `0` |
+| 两个数据文件都缺失时 | 退出码 `4` + 明确指引 |
+| 只有模板时 | 退出码 `0` + 告警 |
+| `git status` | 干净(或只有预期的改动) |
+| `git ls-files` 不含 | `.workbuddy/` · `reports/` · `AGENT_MAIL_SETUP.md` · 活的 watchlist |
+| 线上站点 | 200,且 `#kindTabs` / `#mineKind` / `#kindBar` 齐备 |
+
+---
+
+## 11. 改代码时的红线
+
+1. **不要把状态判断写第二遍** —— 一切走 `engine.js`
+2. **改 `legacy/marathon_registrar.html` 后必须重跑测试** —— 它是防漂移基线
+3. **不要提交含个人数据的文件** —— 先看 §7
+4. **不要把「未设截止日」加回「紧急」集合** —— 会导致天天报警
+5. **不要假设越野赛有报名窗口** —— 31/60 场处于「待公布」是正常的
+6. **零依赖是特性,不是疏忽** —— 不引入测试框架、打包器、前端库

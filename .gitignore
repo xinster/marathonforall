@@ -7,6 +7,11 @@
 reports/
 # Agent Mail 开通记录:含个人邮箱地址
 AGENT_MAIL_SETUP.md
+# 活的关注清单:含个人档案(姓名 / 身份证号 / 手机号 / 紧急联系人),
+# 一旦填了真值,提交即公开泄漏。入库的只有不带个人数据的模板
+# data/marathon_watchlist.example.json。
+# 首次使用:cp data/marathon_watchlist.example.json data/marathon_watchlist.json
+data/marathon_watchlist.json
 
 # ===== 通用 =====
 .DS_Store

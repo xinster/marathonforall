@@ -33,9 +33,15 @@
 ├── tools/
 │   ├── digest.js                 每日巡检:算窗口状态 → 生成 Markdown / HTML 邮件 / 紧急清单
 │   └── notify.js                 巡检 + 推送(有紧急项才发信)
-├── data/marathon_watchlist.json  个人进度 + 个人档案(赛事事实字段以引擎为准)
-├── marathon_registrar.html       历史版本:单文件指挥中心
-├── marathon_calendar_2026.html   赛事日历(初版)
+├── tests/
+│   └── regression.js             83 项断言,任意克隆可直接跑
+├── data/
+│   ├── marathon_watchlist.example.json  入库模板(不含个人数据)
+│   └── marathon_watchlist.json          你的关注清单 —— 已 gitignore,自行创建
+├── docs/
+│   ├── WORKLOG.md                工程记录:每个阶段的决策、踩的坑、怎么验证的
+│   └── HANDOVER.md               交接文档:架构、状态机、红线、待办
+├── legacy/                       历史产物(其中一个被测试当作基线,勿删,见 legacy/README.md)
 └── README.md
 ```
 
@@ -46,17 +52,23 @@
 ## 跑起来
 
 ```bash
-# 网站:直接打开,或用任意静态服务器
+# 1. 首次:创建你自己的关注清单(模板不含个人数据)
+cp data/marathon_watchlist.example.json data/marathon_watchlist.json
+
+# 2. 网站:直接打开,或用任意静态服务器
 open marathon-platform/index.html
 python3 -m http.server 8000 --directory marathon-platform
 
-# 每日巡检(生成摘要,不发信)
+# 3. 每日巡检(生成摘要,不发信)
 node tools/digest.js
 
-# 巡检 + 推送(无紧急事项时按策略不发信)
+# 4. 巡检 + 推送(无紧急事项时按策略不发信)
 node tools/notify.js
 node tools/notify.js --dry-run     # 只打印,不真发
 node tools/notify.js --force       # 无紧急事项也发
+
+# 5. 测试(零依赖,期望 "83 通过 / 0 失败")
+node tests/regression.js
 ```
 
 ---
@@ -99,4 +111,24 @@ node tools/notify.js --force       # 无紧急事项也发
 ## 隐私
 
 仓库**不包含**个人档案数据、每日巡检输出与邮箱配置(见 `.gitignore`)。
-档案只在浏览器本地保存,不上传。
+
+```
+data/marathon_watchlist.example.json   ← 入库的模板,34 个字段全为空
+data/marathon_watchlist.json           ← 你的实际文件,已被 gitignore 排除
+```
+
+档案里有姓名 / 身份证号 / 手机号这类字段,所以**活的文件刻意不入库** ——
+这样即使哪天你填了真值,`git push` 也不可能把它带上去。
+网站端的档案只存浏览器 `localStorage`,不上传。
+
+---
+
+## 工程记录与交接
+
+- [`docs/WORKLOG.md`](docs/WORKLOG.md) —— 怎么走到今天的:每个阶段的决策依据、踩过的坑、怎么验证的
+- [`docs/HANDOVER.md`](docs/HANDOVER.md) —— 接手必读:架构不变量、15 态状态机、已知脆弱点、改代码的红线
+- [`legacy/README.md`](legacy/README.md) —— 历史产物的角色说明(其中一个被测试当作基线,**勿删**)
+
+## 许可
+
+尚未指定许可证。在你决定之前,默认保留所有权利。
