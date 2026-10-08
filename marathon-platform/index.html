@@ -25,6 +25,7 @@
     <button data-tab="notify">提醒与导出</button>
   </nav>
   <span class="clock" id="clock">--:--:--</span>
+  <span class="sync-dot" id="syncDot" data-act="account" title="同步状态:未连接"></span>
   <button class="acct-chip" id="acctChip" data-act="account">登录</button>
 </header>
 
@@ -153,7 +154,7 @@
 
 <footer>
   <b>关于这个版本</b><br>
-  · 当前为<b>本地版</b>:档案与关注清单保存在你自己的浏览器里,换设备不会自动同步。<br>
+  · 关注清单、材料勾选与偏好设置已支持<b>云端同步</b>(手机/邮箱登录后跨设备一致);档案中的<b>姓名/身份证/手机号等证件信息默认只留本机,不同步上云</b>。<br>
   · 收录<b>马拉松 / 路跑</b>与<b>越野赛</b>两类赛事,<b>全程分类展示</b>:赛事库按类型分区、我的关注可按类型筛选、看板顶部给出两类各自的进行中数量。两类在赛制、资格门槛与材料要求上完全不同 —— 越野赛普遍需要 ITRA 表现分、UTMB 指数或跑石,且赛前强制装备逐项检查。<br>
   · 日期均标注了可信度:<b>官方公告</b> / 媒体多源 / 按往年推算 / 待公布 —— 最终以组委会官方公告为准。越野赛的报名窗口公布得普遍比路跑晚,「待公布」占比较高属正常。<br>
   · 状态判断由 <code>assets/engine.js</code> 统一提供,页面、每日巡检脚本与后续小程序共用同一份逻辑,不会出现"网页说待缴费、提醒说已截止"。<br>
@@ -164,9 +165,12 @@
 <div id="toast" class="toast"></div>
 <input type="file" id="importFile" accept=".json,application/json" hidden>
 
+<!-- WorkBuddy Cloud SDK(CDN,@dev 通道)。加载失败不影响本地功能:Cloud 自动降级 -->
+<script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"></script>
 <script src="assets/engine.js"></script>
 <script src="assets/store.js"></script>
 <script src="assets/auth.js"></script>
+<script src="assets/cloud.js"></script>
 <script src="assets/app.js"></script>
 <script src="assets/motion.js"></script>
 </body>

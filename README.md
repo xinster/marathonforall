@@ -30,13 +30,14 @@
 │   │   ├── app.js                界面层
 │   │   ├── styles.css            样式 + 全部 CSS 动画(跑道 / 田径主题)
 │   │   ├── auth.js               本地身份层(昵称/邮箱存 localStorage,不联网)
+│   │   ├── cloud.js              云端同步层(P1):真实云账号 + 单表 blob,换设备同步关注/勾选/设置
 │   │   └── motion.js             动效装饰(计时器 / 进度条 / KPI 数字),可整个删除
 │   └── README.md                 详细设计与架构说明
 ├── tools/
 │   ├── digest.js                 每日巡检:算窗口状态 → 生成 Markdown / HTML 邮件 / 紧急清单
 │   └── notify.js                 巡检 + 推送(有紧急项才发信)
 ├── tests/
-│   └── regression.js             83 项断言,任意克隆可直接跑
+│   └── regression.js             96 项断言,任意克隆可直接跑
 ├── data/
 │   ├── marathon_watchlist.example.json  入库模板(不含个人数据)
 │   └── marathon_watchlist.json          你的关注清单 —— 已 gitignore,自行创建
@@ -44,7 +45,7 @@
 │   ├── HANDOVER.md               交接必读:架构、状态机、已知脆弱点、改代码红线
 │   ├── WORKLOG.md                工程记录:每个阶段的决策、踩的坑、怎么验证的
 │   ├── MAIL_SETUP.md             邮件通道怎么接、坏了怎么排查
-│   ├── AUTH_DESIGN.md            账号体系 / 用户登录设计方案(草案,未实施)
+│   ├── AUTH_DESIGN.md            账号体系 / 用户登录设计方案(P0 本地身份 + P1 云端同步已实现)
 │   └── OPERATIONS.md             每日巡检怎么长期跑、网站怎么发布、数据怎么改
 ├── legacy/                       历史产物(其中一个被测试当作基线,勿删,见 legacy/README.md)
 ├── scripts/check.sh              一键自检:语法 / 回归 / 巡检冒烟 / 隐私守卫(零权限要求)
@@ -74,7 +75,7 @@ node tools/notify.js
 node tools/notify.js --dry-run     # 只打印,不真发
 node tools/notify.js --force       # 无紧急事项也发
 
-# 5. 测试(零依赖,期望 "83 通过 / 0 失败")
+# 5. 测试(零依赖,期望 "96 通过 / 0 失败")
 node tests/regression.js
 
 # 6. 一键自检(语法 + 回归 + 巡检冒烟 + 隐私守卫,四合一)
@@ -139,6 +140,10 @@ data/marathon_watchlist.json           ← 你的实际文件,已被 gitignore �
 这样即使哪天你填了真值,`git push` 也不可能把它带上去。
 网站端的档案只存浏览器 `localStorage`,不上传。
 
+> 开启云端同步后(见 [`docs/AUTH_DESIGN.md`](docs/AUTH_DESIGN.md) 的 P1),
+> **也只有关注清单 / 材料勾选 / 偏好设置 / 自建赛事会上云**;`profile` 里的
+> 姓名 / 身份证号 / 手机号 / 紧急联系人**永远只留本机**,云表结构里根本没有这些字段。
+
 ---
 
 ## 工程记录与交接
@@ -147,7 +152,7 @@ data/marathon_watchlist.json           ← 你的实际文件,已被 gitignore �
 - [`docs/WORKLOG.md`](docs/WORKLOG.md) —— 怎么走到今天的:每个阶段的决策依据、踩过的坑、怎么验证的
 - [`docs/OPERATIONS.md`](docs/OPERATIONS.md) —— 巡检怎么长期跑、网站怎么发布、赛历数据怎么改
 - [`docs/MAIL_SETUP.md`](docs/MAIL_SETUP.md) —— 邮件通道接入与故障排查
-- [`docs/AUTH_DESIGN.md`](docs/AUTH_DESIGN.md) —— 用户登录 / 账号体系设计方案(设计草案,未实施)
+- [`docs/AUTH_DESIGN.md`](docs/AUTH_DESIGN.md) —— 用户登录 / 账号体系设计方案(P0 本地身份 + P1 云端同步已落地)
 - [`legacy/README.md`](legacy/README.md) —— 历史产物的角色说明(其中一个被测试当作基线,**勿删**)
 
 ## 许可

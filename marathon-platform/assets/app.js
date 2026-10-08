@@ -7,7 +7,7 @@
 (function () {
   "use strict";
 
-  var ME = window.ME, S = window.Store, Auth = window.Auth;
+  var ME = window.ME, S = window.Store, Auth = window.Auth, Cloud = window.Cloud;
   var $ = function (s) { return document.querySelector(s); };
   var $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
   var esc = ME.esc;
@@ -799,7 +799,8 @@
           '<div class="acct-row"><span>已关注赛事</span><b>' + S.watchedRaces().length + ' 场</b></div>' +
           '<div class="acct-row"><span>最近保存</span><b>' + meta + '</b></div>' +
         '</div>' +
-        '<p class="m-tip">换设备 / 多端同步需要先开启后端服务。开启后,这里会多出「云端同步」开关,关注清单与档案可随身带走。</p>' +
+        cloudSection() +
+        '<p class="m-tip">手机 / 邮箱登录后,关注清单、材料勾选与偏好会跨设备一致。档案里的姓名 / 身份证 / 手机号默认只留本机,不同步上云。</p>' +
         '<div class="m-acts"><button class="mini" data-act="close">关闭</button>' +
         '<button class="mini danger" data-act="acct-out">退出登录</button></div>'
       );
@@ -813,6 +814,7 @@
         '<label class="acct-fld"><span>昵称</span><input class="acct-in" id="acctName" type="text" placeholder="例如:星哥、MarathonFan" maxlength="20" autocomplete="nickname"></label>' +
         '<label class="acct-fld"><span>邮箱(选填)</span><input class="acct-in" id="acctEmail" type="text" placeholder="用于后续云端同步,现在不发送任何邮件" maxlength="80" autocomplete="email"></label>' +
         '<p class="acct-note">本地版不会把证件号 / 手机号上传。邮箱仅在你主动开启云端同步后才会使用。</p>' +
+        cloudSection() +
         '<div class="m-acts">' +
           '<button class="mini" type="button" data-act="close">稍后</button>' +
           '<button class="mini primary" type="button" data-act="acct-save">保存身份</button>' +
@@ -822,6 +824,178 @@
   }
 
   /* ============================================================ 渲染 */
+
+  /* ============================================================ 云端同步(P1) */
+
+  var lastSyncAt = null, pendingPhone = null, pendingEmail = null, pushTimer = null;
+
+  function fmtAgo(d) {
+    try { return new Date(d).toLocaleString("zh-CN", { hour12: false }); } catch (e) { return "—"; }
+  }
+  function setSyncDot(state) {
+    var d = $("#syncDot"); if (!d) return;
+    d.className = "sync-dot " + (state || "");
+    var map = { ok: "已同步", pending: "同步中 / 待同步", error: "同步失败", off: "未连接" };
+    d.title = "同步状态:" + (map[state] || "未连接");
+  }
+  function setCloudStatus(text, cls) {
+    var el = $("#cloudStatus"); if (el) { el.textContent = text; el.className = "cloud-status " + (cls || ""); }
+  }
+
+  /* 账号面板里的云端区块(内容在 openAccount 后由 refreshCloudUI 填充) */
+  function cloudSection() {
+    if (!Cloud.isReady()) {
+      return '<div class="acct-cloud off"><div class="acct-sub">云端同步</div>' +
+        '<div class="cloud-status off">云服务未连接(离线) · 本地数据照常保存</div></div>';
+    }
+    return '<div class="acct-cloud" id="acctCloud">' +
+      '<div class="acct-sub">云端同步 · 跨设备</div>' +
+      '<div id="cloudStatus" class="cloud-status">检测登录态…</div>' +
+      '<div id="cloudLogin">' +
+        '<div class="acct-tabs">' +
+          '<button class="acct-tab on" data-act="cloud-tab" data-id="phone">手机验证码</button>' +
+          '<button class="acct-tab" data-act="cloud-tab" data-id="email">邮箱验证码</button>' +
+        '</div>' +
+        '<div id="cloudFormPhone" class="cloud-form">' +
+          '<input class="acct-in" id="cloudPhone" type="tel" inputmode="numeric" maxlength="11" placeholder="11 位手机号" autocomplete="tel">' +
+          '<button class="mini" type="button" data-act="cloud-send-phone" id="cloudSendPhone">获取验证码</button>' +
+          '<input class="acct-in" id="cloudPhoneCode" type="text" inputmode="numeric" maxlength="8" placeholder="短信验证码">' +
+          '<button class="mini primary" type="button" data-act="cloud-verify-phone">登录 / 注册</button>' +
+        '</div>' +
+        '<div id="cloudFormEmail" class="cloud-form" style="display:none">' +
+          '<input class="acct-in" id="cloudEmail" type="email" maxlength="80" placeholder="邮箱" autocomplete="email">' +
+          '<button class="mini" type="button" data-act="cloud-send-email" id="cloudSendEmail">获取验证码</button>' +
+          '<input class="acct-in" id="cloudEmailCode" type="text" inputmode="numeric" maxlength="8" placeholder="邮箱验证码">' +
+          '<input class="acct-in" id="cloudEmailPwd" type="password" maxlength="60" placeholder="设置密码(新账号必填)" style="display:none">' +
+          '<button class="mini primary" type="button" data-act="cloud-verify-email">登录 / 注册</button>' +
+        '</div>' +
+      '</div>' +
+      '<div id="cloudOn" style="display:none">' +
+        '<div class="acct-row"><span>云端账号</span><b id="cloudWho">—</b></div>' +
+        '<div class="acct-row"><span>最近同步</span><b id="cloudWhen">—</b></div>' +
+        '<div class="m-acts">' +
+          '<button class="mini primary" type="button" data-act="cloud-sync">立即同步</button>' +
+          '<button class="mini" type="button" data-act="cloud-out">退出云端</button>' +
+        '</div>' +
+        '<p class="m-tip">退出只清除本机登录态,云端数据保留;下次同账号登录会自动合并。</p>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function refreshCloudUI() {
+    var box = $("#acctCloud"); if (!box) return;
+    if (!Cloud.isReady()) { setSyncDot("off"); return; }
+    Cloud.getSession().then(function (r) {
+      var on = !!(r.data && r.data.user);
+      var login = $("#cloudLogin"), onp = $("#cloudOn");
+      if (login) login.style.display = on ? "none" : "";
+      if (onp) onp.style.display = on ? "" : "none";
+      if (on) {
+        var who = $("#cloudWho"); if (who) who.textContent = Cloud.maskIdentity(r.data) || "云端用户";
+        var when = $("#cloudWhen"); if (when) when.textContent = lastSyncAt ? fmtAgo(lastSyncAt) : "尚未同步";
+        setSyncDot(lastSyncAt ? "ok" : "pending");
+      } else {
+        setSyncDot("off");
+      }
+    });
+  }
+
+  /* 拉取云端 -> 与本地合并 -> 写回 -> 推送合并结果。合并规则见 ME.mergeStates。 */
+  async function doSync() {
+    if (!Cloud.isReady()) { toast("云服务未连接"); return; }
+    var s = await Cloud.getSession();
+    if (!s.data || !s.data.user) { toast("请先登录云端账号"); return; }
+    setCloudStatus("同步中…", "pending"); setSyncDot("pending");
+    var pulled = await Cloud.pull();
+    if (pulled.error) {
+      if (pulled.error.kind === "unauthenticated") { toast("登录已失效,请重新登录"); refreshCloudUI(); return; }
+      setCloudStatus("云端拉取失败", "error"); setSyncDot("error"); toast("云端拉取失败,稍后重试"); return;
+    }
+    var local = S.toSyncBlob();
+    var merged = ME.mergeStates(local, pulled.data || {});
+    S.applySyncBlob(merged);
+    render();
+    var pushed = await Cloud.push(merged);
+    if (pushed.error) { setCloudStatus("云端上传失败", "error"); setSyncDot("error"); toast("已合并但上传失败,稍后重试"); return; }
+    lastSyncAt = new Date();
+    setCloudStatus("已同步 · " + fmtAgo(lastSyncAt), "ok"); setSyncDot("ok");
+    var when = $("#cloudWhen"); if (when) when.textContent = fmtAgo(lastSyncAt);
+    toast("已与云端合并并同步");
+  }
+
+  /* 本地改动后防抖上传(仅传本地 blob;跨设备冲突在下次登录 pull 时按 updatedAt 合并) */
+  function schedulePush() {
+    if (!Cloud.isReady()) return;
+    Cloud.getSession().then(function (r) {
+      if (!r.data || !r.data.user) return;
+      if (pushTimer) clearTimeout(pushTimer);
+      pushTimer = setTimeout(function () {
+        Cloud.push(S.toSyncBlob()).then(function (res) {
+          if (res.error) { setSyncDot("pending"); setCloudStatus("待同步", "pending"); }
+          else { lastSyncAt = new Date(); setSyncDot("ok"); setCloudStatus("已同步 · " + fmtAgo(lastSyncAt), "ok"); var w = $("#cloudWhen"); if (w) w.textContent = fmtAgo(lastSyncAt); }
+        });
+      }, 1500);
+    });
+  }
+
+  function afterCloudLogin() { refreshCloudUI(); renderAcctChip(); doSync(); }
+
+  function cloudTab(which) {
+    var p = which === "phone";
+    var fp = $("#cloudFormPhone"), fe = $("#cloudFormEmail");
+    if (fp) fp.style.display = p ? "" : "none";
+    if (fe) fe.style.display = p ? "none" : "";
+    $$("#acctCloud .acct-tab").forEach(function (b) { b.classList.toggle("on", b.dataset.id === which); });
+  }
+
+  function cloudSendPhone() {
+    var phone = $("#cloudPhone") ? $("#cloudPhone").value.trim() : "";
+    if (!/^1\d{10}$/.test(phone)) { toast("请输入正确的 11 位手机号"); return; }
+    Cloud.sendOtp({ phone: phone }).then(function (r) {
+      if (r.error) { toast("发送失败:" + (r.error.message || r.error.kind)); return; }
+      pendingPhone = { phone: phone, verificationId: r.data && r.data.verificationId, isExistingUser: r.data && r.data.isExistingUser };
+      toast("验证码已发送");
+      var b = $("#cloudSendPhone"); if (b) { b.disabled = true; setTimeout(function () { b.disabled = false; }, 30000); }
+    });
+  }
+  function cloudVerifyPhone() {
+    if (!pendingPhone) { toast("请先获取验证码"); return; }
+    var code = $("#cloudPhoneCode") ? $("#cloudPhoneCode").value.trim() : "";
+    if (!code) { toast("请输入验证码"); return; }
+    Cloud.verifyOtp({ phone: pendingPhone.phone, verificationId: pendingPhone.verificationId, isExistingUser: pendingPhone.isExistingUser, token: code })
+      .then(function (r) {
+        if (r.error) { toast("验证失败:" + (r.error.message || r.error.kind)); return; }
+        pendingPhone = null; afterCloudLogin();
+      });
+  }
+  function cloudSendEmail() {
+    var email = $("#cloudEmail") ? $("#cloudEmail").value.trim() : "";
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast("请输入有效邮箱"); return; }
+    Cloud.sendOtp({ email: email }).then(function (r) {
+      if (r.error) { toast("发送失败:" + (r.error.message || r.error.kind)); return; }
+      pendingEmail = { email: email, verificationId: r.data && r.data.verificationId, isExistingUser: r.data && r.data.isExistingUser };
+      if (pendingEmail.isExistingUser === false) { var p = $("#cloudEmailPwd"); if (p) p.style.display = ""; }
+      toast("验证码已发送");
+      var b = $("#cloudSendEmail"); if (b) { b.disabled = true; setTimeout(function () { b.disabled = false; }, 30000); }
+    });
+  }
+  function cloudVerifyEmail() {
+    if (!pendingEmail) { toast("请先获取验证码"); return; }
+    var code = $("#cloudEmailCode") ? $("#cloudEmailCode").value.trim() : "";
+    if (!code) { toast("请输入验证码"); return; }
+    var pwd = (pendingEmail.isExistingUser === false) ? ($("#cloudEmailPwd") ? $("#cloudEmailPwd").value : "") : undefined;
+    if (pendingEmail.isExistingUser === false && !pwd) { toast("新账号请先设置密码"); return; }
+    Cloud.verifyOtp({ email: pendingEmail.email, verificationId: pendingEmail.verificationId, isExistingUser: pendingEmail.isExistingUser, token: code, password: pwd })
+      .then(function (r) {
+        if (r.error) { toast("验证失败:" + (r.error.message || r.error.kind)); return; }
+        pendingEmail = null; afterCloudLogin();
+      });
+  }
+  function cloudOut() {
+    Cloud.signOut().then(function () {
+      lastSyncAt = null; refreshCloudUI(); renderAcctChip(); toast("已退出云端(本地数据保留)");
+    });
+  }
 
   function render() {
     $$(".nav button").forEach(function (b) { b.classList.toggle("on", b.dataset.tab === tab); });
@@ -898,6 +1072,13 @@
         hideModal();
         break;
       case "account": openAccount(); break;
+      case "cloud-tab": cloudTab(t.dataset.id); break;
+      case "cloud-send-phone": cloudSendPhone(); break;
+      case "cloud-verify-phone": cloudVerifyPhone(); break;
+      case "cloud-send-email": cloudSendEmail(); break;
+      case "cloud-verify-email": cloudVerifyEmail(); break;
+      case "cloud-sync": doSync(); break;
+      case "cloud-out": cloudOut(); break;
       case "backup": download("marathon-backup-" + stamp() + ".json", S.exportJSON(), "application/json"); break;
       case "reset":
         if (confirm("清空全部本地数据(档案、关注、材料勾选)?\n此操作不可恢复,建议先导出备份。")) {
@@ -1042,6 +1223,21 @@
   })();
   renderAcctChip();
   if (Auth.onChange) Auth.onChange(renderAcctChip);
+
+  /* 云端同步(P1):会话检测 + 自动拉取合并 + 本地改动防抖上传 */
+  if (Cloud.isReady()) {
+    Cloud.onAuthStateChange(function (ev, sess) {
+      if (sess && sess.user) { refreshCloudUI(); schedulePush(); }
+      else { lastSyncAt = null; refreshCloudUI(); }
+    });
+    Cloud.getSession().then(function (r) {
+      if (r.data && r.data.user) { refreshCloudUI(); doSync(); }
+      else { refreshCloudUI(); }
+    });
+    S.subscribe(schedulePush);
+  } else {
+    setSyncDot("off");
+  }
 
   render();
   fireDue();

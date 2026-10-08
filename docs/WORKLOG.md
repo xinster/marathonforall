@@ -29,6 +29,7 @@
 | 10-07 17:00 | **仓库结构整理 + 文档** | `tests/` `docs/` `legacy/`,数据模板化 |
 | 10-07 17:25 | **交接可独立性审计** | `LICENSE` + 自检脚本 + `MAIL_SETUP`/`OPERATIONS`,修掉 6 个移交阻断项 |
 | 10-08 13:20 | **UI 动感改版** | 全站换成「跑道 / 田径」风,新增 `assets/motion.js`,样式表整体重写 |
+| 10-08 15:10 | **P1 云端同步** | 真实云账号(手机/邮箱 OTP)+ 单表 `user_state` + RLS;换设备同步关注/勾选/设置,证件类字段仍留本机 |
 
 ---
 
@@ -601,3 +602,75 @@ node tests/regression.js
 - P1 上云:接后端单表 blob + 离线缓存 + `ME.mergeStates` 合并策略(换设备看到同一份关注)
 - 登录方式:微信扫码 / 手机验证码(需后端)
 - 证件信息同不同步:本阶段**默认不同步**,沿用 AUTH_DESIGN 的建议
+
+---
+
+## 16. 阶段十二:P1 云端同步(10-08 15:10,本阶段)
+
+用户说「接着做」,在 P0 本地身份层之上落地 `docs/AUTH_DESIGN.md` 的 **P1**:真实云账号 + 单表 blob 同步,
+换设备看到同一份关注 / 勾选 / 设置,**证件类字段仍只留本机**。
+
+**决策:复用已发布的同一个 appId**
+
+站点以应用 `wbapp_Hq5OK3jMzN64v1kK3FMP1z` 发布,云服务身份校验**按同源 Origin 生效**。
+P0 阶段曾把云手动取消,这次重新 `activate` 时**故意复用同一个 app 而非新建** —— 这样云端的 Origin 与线上
+分享链接同源,登录回调不会被跨域拦掉。新建一个 app 会多一套独立云环境,反而把数据割裂。
+
+### 接入形态(早就定死的)
+
+项目无 `package.json`/无打包器 → SDK **只能走 CDN `<script>`**(全局 `WorkBuddyCloud`,
+`@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js`),必须用 `@dev` 而非 `@latest`。
+前端**永远不持有端点域名**:`publicConfig` 里只放 `endpoint` / `oauthRelayBaseUrl` / `publishableKey` 三样,
+且**绝不在代码里硬编码 endpoint**,也不手写对 `/.cloud/**` 的 fetch。
+
+### 改动清单
+
+| 文件 | 改动 |
+|---|---|
+| `assets/cloud.js` | **新增**(UMD)。持有 `PC = publicConfig`;`init()` 建 `cloud = W.createWorkBuddyCloud({...})`;`isReady()` 暴露就绪态。封装 Auth(`sendOtp`/`verifyOtp`/`signOut`/`getSession`/`onAuthStateChange`/`maskIdentity`)与同步(`pull`/`push`)。`owner_id` 一律交给服务端,前端不传 |
+| `assets/engine.js` | 新增纯函数 `ME.mergeStates(local, cloud)`(见下「冲突处理」),导出到返回对象 |
+| `assets/store.js` | 新增 `toSyncBlob()`(只吐 `{watching,checklists,settings,custom,savedAt}`,**永不带 profile/account**)、`applySyncBlob(blob)`(写回合并后的子集,profile/account 原样不动)、`clone()`;`[SEAM]` 不变 |
+| `index.html` | 顶栏加 `<span class="sync-dot" id="syncDot">`;`<script>` 在 `auth.js` 与 `app.js` 间插入 `cloud.js`(加载序 `engine → store → auth → cloud → app → motion`);页脚注明云端同步范围与证件类字段不上云 |
+| `assets/app.js` | 加云同步整块:`doSync()`(拉 → `mergeStates` → 写回 → 渲染 → 推)、`schedulePush()`(1.5s 防抖)、`cloudSection()`(登录页/已登录区)、`setSyncDot()`(ok/pending/error/off)、`refreshCloudUI()`;点击代理加 `cloud-tab`/`cloud-send-phone`/`cloud-verify-phone`/`cloud-send-email`/`cloud-verify-email`/`cloud-sync`/`cloud-out`;启动段 `Cloud.isReady()` 时挂 `onAuthStateChange` + 自动 `doSync` + `S.subscribe(schedulePush)` |
+| `assets/styles.css` | 加 `.sync-dot`(+ `.ok/.pending/.error/.off`)+ `.acct-cloud` / `.cloud-status` / `.acct-tabs` / `.acct-tab` / `.cloud-form` 等,全在 `.acct-*` / `.sync-*` 命名空间,**不碰被回归计数的类名** |
+
+### 冲突处理(写成引擎纯函数,可回归)
+
+`ME.mergeStates(local, cloud)` 是**首次登录即合并、而非覆盖**的核心,规则:
+
+- `watching` 按 `raceId` 并集;冲突取 `updatedAt` 较新者
+- `checklists` 并集,`true` 优先级最高(勾上过就不要被没勾的覆盖)
+- `settings` 本地优先(`Object.assign({}, cloud.settings, local.settings)`)
+- `custom` 按 `id` 并集,本地优先
+- 返回 `{watching, checklists, settings, custom, savedAt}`
+
+这样「手机上关注了 A、电脑上关注了 B」合并后是 A+B,不会互相吞。
+
+### 隐私红线(云上只放安全子集)
+
+- `toSyncBlob()` **只**取 watching / checklists / settings / custom / savedAt 五样
+- `applySyncBlob()` 只写回这五样,`profile`(姓名/身份证/手机号/紧急联系人)与 `account`(昵称镜像)**原样不动**
+- 云表 `user_state` 结构:`id` / `owner_id(默认 auth.uid())` / `state_json(JSONB)` / `updated_at` / `created_at`
+- 表级 RLS:`owner_id = auth.uid()`,`authenticated` 才授权;`INSERT` 也不许带 `owner_id`,由服务端默认填
+- 回归里加了 13 条断言守护这两条(mergeStates 各分支 + `toSyncBlob` 不含 profile/account + `applySyncBlob` 不写 profile)
+
+### 验证
+
+- `node tests/regression.js` → **96 通过 / 0 失败**(新增 13 条,断言零改动)
+- `sh scripts/check.sh` → 四段全绿(语法 / 回归 / 巡检冒烟 / 隐私守卫)
+- 线上 `curl` 复核:`index.html` 含 `id="syncDot"`、`workbuddy-cloud-sdk@dev`、`assets/cloud.js` 200(5239B)、`publishableKey` 已注入(验证时脱敏为 `wbpk_..._***`)
+- 发布:`workbuddy_sites_deploy` 重新发布,线上已生效
+
+### 这一阶段新踩的坑
+
+| 坑 | 结论 |
+|---|---|
+| RLS 策略被并行写竞争吃掉 | 8 条 `exec_sql`(4 DROP + 4 CREATE 交错)并行跑,后到的 DROP 把先到的 CREATE 干掉,最后只剩 `insert_own` / `delete_own`。**改串行**:先一批 4 个 DROP,再一批 4 个 CREATE,`list_rls` 复核 4 条全在 |
+| 回归 `const T` 重名 | 新增测试块误用 `const T`(file 前面已声明),`SyntaxError`。改名 `const MG = W.mergeStates` |
+| 断言数先估错 | 初设 99,实际 96(83+13)。统一改为 96 |
+
+### 下一步(未做,等用户拍板)
+
+- P2 服务端:把单表拆成 `watchlist`/`checklists`/`profiles` 等多表,巡检迁服务端才能「不开机也收邮件」
+- 登录方式:手机/邮箱 OTP 已接,微信扫码需 `oauthRelayBaseUrl`(已传);**Auth Provider 开关若云端当前关闭,需在云管理面板开启** —— 这是上线前需用户确认的一步
+- 证件是否上云:本阶段**默认不同步**;AUTH_DESIGN 建议仅显式勾选才同步且界面标注

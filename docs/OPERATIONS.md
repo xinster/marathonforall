@@ -69,7 +69,7 @@ crontab -e
 替代方案是本地自检脚本,用的是同一批断言,但零权限要求、谁都能跑:
 
 ```bash
-sh scripts/check.sh     # 语法 + 83 项回归 + 巡检冒烟 + 隐私守卫
+sh scripts/check.sh     # 语法 + 96 项回归 + 巡检冒烟 + 隐私守卫
 ```
 
 好处是**在本地就把问题拦下来**,不用等 push 之后才发现。
@@ -145,7 +145,7 @@ node tests/regression.js
 
 ```bash
 sh scripts/check.sh            # 一键跑完下面四项,全绿退出码 0
-node tests/regression.js       # 期望:83 通过 / 0 失败
+node tests/regression.js       # 期望:96 通过 / 0 失败
 node tools/digest.js           # 期望:退出码 0,reports/ 下三个文件
 git status --short             # 期望:干净,或只有你预期的改动
 ```

@@ -190,7 +190,7 @@ sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
 vm.runInContext(fs.readFileSync(DIR + "/assets/engine.js", "utf8"), sandbox, { filename: "engine.js" });
 sandbox.window.ME = sandbox.ME;
-for (const f of ["assets/store.js", "assets/auth.js", "assets/app.js"]) {
+for (const f of ["assets/store.js", "assets/auth.js", "assets/cloud.js", "assets/app.js"]) {
   vm.runInContext(fs.readFileSync(DIR + "/" + f, "utf8"), sandbox, { filename: f });
 }
 const txt = s => String(s || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
@@ -364,6 +364,44 @@ ok("stats 提供 road/trail 计数", st.road === 24 && st.trail === 36, JSON.str
 const ics = W.buildICS([S.raceById("utmb27")], null);
 ok("越野 ICS 生成事件", (ics.match(/BEGIN:VEVENT/g) || []).length >= 1);
 ok("越野 ICS 结构闭合", (ics.match(/BEGIN:VEVENT/g) || []).length === (ics.match(/END:VEVENT/g) || []).length);
+
+/* --- ME.mergeStates: 云端合并(隐私安全,不碰 profile) --- */
+const MG = W.mergeStates;
+let m1 = MG(
+  { watching: { r1: { status: "paid", updatedAt: "2026-10-01T00:00:00Z" } } },
+  { watching: { r1: { status: "watching", updatedAt: "2026-10-05T00:00:00Z" }, r2: { status: "watching" } } }
+);
+ok("watching 并集两场", Object.keys(m1.watching).length === 2);
+ok("watching 冲突取较新(云端)", m1.watching.r1.status === "watching");
+let m2 = MG(
+  { watching: { r1: { status: "paid", updatedAt: "2026-10-09T00:00:00Z" } } },
+  { watching: { r1: { status: "watching", updatedAt: "2026-10-05T00:00:00Z" } } }
+);
+ok("watching 本地较新保留本地", m2.watching.r1.status === "paid");
+let m3 = MG({ checklists: { r1: { a: true } } }, { checklists: { r1: { b: true } } });
+ok("checklists 并集两项且都为 true", Object.keys(m3.checklists.r1).length === 2 && m3.checklists.r1.a && m3.checklists.r1.b);
+let m4 = MG({ settings: { leadDays: 7, email: "a@x.com" } }, { settings: { leadDays: 3, email: "b@x.com" } });
+ok("settings 本地优先", m4.settings.leadDays === 7 && m4.settings.email === "a@x.com");
+let m5 = MG({ custom: [{ id: "c1", name: "本地自建" }] }, { custom: [{ id: "c2", name: "云端自建" }] });
+ok("custom 两方向并集", m5.custom.length === 2 && m5.custom.some(r => r.id === "c1") && m5.custom.some(r => r.id === "c2"));
+let m6 = MG({ watching: { r9: { status: "watching" } } }, {});
+ok("空云端返回本地", m6.watching.r9 && Object.keys(m6.watching).length === 1);
+
+/* --- store seam: toSyncBlob 绝不含 profile / account --- */
+S.resetAll();
+S.state.profile = { name: "张三", idNo: "110101199001011234", phone: "13800000000" };
+S.state.account = { nickname: "本地昵称", provider: "local" };
+S.watch("bj26"); S.toggleCheck("bj26", "gear");
+const blob = S.toSyncBlob();
+ok("toSyncBlob 不含 profile(隐私红线)", !("profile" in blob));
+ok("toSyncBlob 不含 account(本机身份)", !("account" in blob));
+ok("toSyncBlob 含 watching", !!(blob.watching && blob.watching.bj26));
+ok("toSyncBlob 含 checklists", !!(blob.checklists && blob.checklists.bj26 && blob.checklists.bj26.gear));
+const beforeProfile = JSON.stringify(S.state.profile);
+S.applySyncBlob({ watching: { sh27: { status: "watching" } }, checklists: {}, settings: {}, custom: [] });
+ok("applySyncBlob 不动 profile", JSON.stringify(S.state.profile) === beforeProfile);
+ok("applySyncBlob 写入 watching", S.isWatched("sh27"));
+S.resetAll();
 
 console.log("\n========== " + pass + " 通过 / " + fail + " 失败 ==========");
 process.exit(fail ? 1 : 0);

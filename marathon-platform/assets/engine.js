@@ -912,11 +912,53 @@ const KIND_LABEL = { road:"马拉松 / 路跑", trail:"越野赛" };
 function kindOf(r){ return (r && r.kind === "trail") ? "trail" : "road"; }
 const SEED_ALL = SEED_RACES.concat(SEED_TRAIL);
 
+/* =========================================================================
+   云端合并(纯函数,可回归测试)
+   -------------------------------------------------------------------------
+   只合并「同步安全子集」: watching / checklists / settings / custom。
+   profile(姓名/身份证/手机号/紧急联系人)绝不在 blob 里,故不会被合并。
+   规则:
+     watching   按 raceId 并集;同一场冲突时取 updatedAt 较新的一条
+     checklists 按 raceId∪勾选项并集;只要任一侧为 true 即 true(true 胜出)
+     settings   本地优先(Object.assign(cloud, local))
+     custom     按 id 并集;id 冲突时本地优先
+   ========================================================================= */
+function mergeStates(local, cloud) {
+  local = local || {}; cloud = cloud || {};
+  var watching = Object.assign({}, local.watching || {});
+  var cw = cloud.watching || {};
+  Object.keys(cw).forEach(function (id) {
+    var c = cw[id] || {}, l = watching[id];
+    if (!l) { watching[id] = c; return; }
+    var ct = c.updatedAt || c.addedAt || "", lt = l.updatedAt || l.addedAt || "";
+    if (ct > lt) watching[id] = c; // 云端更新 -> 取云端
+  });
+  var checklists = Object.assign({}, local.checklists || {});
+  var cc = cloud.checklists || {};
+  Object.keys(cc).forEach(function (id) {
+    var src = cc[id] || {}, dst = checklists[id] || {};
+    Object.keys(src).forEach(function (k) { if (src[k]) dst[k] = true; });
+    checklists[id] = dst;
+  });
+  var settings = Object.assign({}, cloud.settings || {}, local.settings || {});
+  var custom = (local.custom || []).slice();
+  var seen = {}; custom.forEach(function (r) { seen[r.id] = true; });
+  (cloud.custom || []).forEach(function (r) { if (!seen[r.id]) { custom.push(r); seen[r.id] = true; } });
+  return {
+    watching: watching,
+    checklists: checklists,
+    settings: settings,
+    custom: custom,
+    savedAt: cloud.savedAt || local.savedAt || null
+  };
+}
+
 return {
   MS_DAY, parseDT, mid, dayDiff, fmtDate, fmtMd, WD, weekday, esc,
   SEED_RACES, SEED_TRAIL, SEED_ALL, KIND_LABEL, kindOf,
   buildChecklist, MODE_LABEL, MODE_TIP,
   computeStatus, URG_CLS, EMPTY_PROFILE, ageFromBirth, profileWarnings, maxDistKm,
-  parseHMS, profileBlock, icsEscape, icsStamp, icsDate, buildICS
+  parseHMS, profileBlock, icsEscape, icsStamp, icsDate, buildICS,
+  mergeStates
 };
 });

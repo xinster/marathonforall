@@ -249,6 +249,35 @@
     };
   }
 
+  /* ---------------- 云端同步(后端接入 seam) ---------------- */
+
+  /* 提取「同步安全子集」。绝不返回 profile(姓名/身份证/手机号/紧急联系人)
+     与 account(本机身份镜像)。这两个字段只留本地,默认不上云。 */
+  function toSyncBlob() {
+    return {
+      watching: clone(state.watching),
+      checklists: clone(state.checklists),
+      settings: clone(state.settings),
+      custom: clone(state.custom),
+      savedAt: new Date().toISOString()
+    };
+  }
+
+  /* 写回合并后的 blob。profile / account 不动。 */
+  function applySyncBlob(blob) {
+    if (!blob || typeof blob !== "object") return false;
+    if (blob.watching && typeof blob.watching === "object") state.watching = blob.watching;
+    if (blob.checklists && typeof blob.checklists === "object") state.checklists = blob.checklists;
+    if (blob.settings && typeof blob.settings === "object") {
+      state.settings = Object.assign(state.settings, blob.settings);
+    }
+    if (Array.isArray(blob.custom)) state.custom = blob.custom;
+    save();
+    return true;
+  }
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
   root.Store = {
     KEY: KEY, SCHEMA: SCHEMA,
     load: load, save: save, subscribe: subscribe,
@@ -259,6 +288,7 @@
     setStatus: setStatus, watchedRaces: watchedRaces,
     checklistOf: checklistOf, toggleCheck: toggleCheck, checklistProgress: checklistProgress,
     addCustomRace: addCustomRace, removeCustomRace: removeCustomRace,
+    toSyncBlob: toSyncBlob, applySyncBlob: applySyncBlob,
     exportJSON: exportJSON, importJSON: importJSON, resetAll: resetAll, stats: stats
   };
 })(typeof window !== "undefined" ? window : globalThis);

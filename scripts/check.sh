@@ -36,6 +36,8 @@ section "1/4 语法检查"
 for f in \
   marathon-platform/assets/engine.js \
   marathon-platform/assets/store.js \
+  marathon-platform/assets/auth.js \
+  marathon-platform/assets/cloud.js \
   marathon-platform/assets/app.js \
   marathon-platform/assets/motion.js \
   tools/digest.js \
@@ -46,7 +48,7 @@ do
 done
 
 # ---------- 2. 运行时回归 ----------
-section "2/4 运行时回归(期望 83 通过 / 0 失败)"
+section "2/4 运行时回归(期望 96 通过 / 0 失败)"
 if "$NODE" tests/regression.js; then
   pass "回归通过"
 else

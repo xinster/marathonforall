@@ -45,7 +45,7 @@ open marathon-platform/index.html
 # 3. 跑一次巡检(只生成摘要,不发信)
 node tools/digest.js
 
-# 4. 跑测试 —— 应输出 "83 通过 / 0 失败"
+# 4. 跑测试 —— 应输出 "96 通过 / 0 失败"
 node tests/regression.js
 
 # 5. 一键自检(语法 + 回归 + 巡检冒烟 + 隐私守卫)
@@ -112,11 +112,12 @@ marathon-platform/           ★ 产品,线上部署目录
   assets/styles.css          样式 + 全部动画(路跑=青绿 --ac,越野=土黄 --amb)
   assets/motion.js           动效装饰(计时器/进度条/KPI 数字)—— 可整个删除,不影响功能
   assets/auth.js            本地身份层(P0):昵称/选填邮箱存 localStorage,不联网、不碰引擎
+  assets/cloud.js           云端同步层(P1):真实云账号 + 单表 user_state + RLS,换设备同步关注/勾选/设置
   README.md                  详细设计与架构说明
 tools/
   digest.js                  每日巡检:算状态 → Markdown / HTML 邮件 / 紧急清单
   notify.js                  巡检 + 推送(有紧急项才发信;需外部发信 CLI)
-tests/regression.js          83 项断言,任意克隆可跑
+tests/regression.js          96 项断言,任意克隆可跑
 data/
   marathon_watchlist.example.json   入库模板(无个人数据)
   marathon_watchlist.json           活的关注清单 —— 已 gitignore,含个人档案
@@ -135,14 +136,28 @@ scripts/check.sh             一键自检:语法 / 回归 / 巡检冒烟 / 隐�
 `auth.js` 是**本地身份层(P0)**:账号只存浏览器 `localStorage`,刷新保持、不发起任何网络请求、
 不持有密钥;它镜像身份进 `store.account` 便于备份,但状态判断仍全部走 `engine.js`。
 
-### 以后接后端
+### 本机身份与云端同步(已落地 P0 + P1)
 
-`assets/store.js` 里 `read()` / `write()` 打了 `[SEAM]` 标记 ——
-接后端只有这一个改动点,界面层不用动。
+`assets/store.js` 的 `read()` / `write()` 打了 `[SEAM]` 标记 —— 这里是读写收口,也是接后端的唯一改动点。
 
-> 完整方案(登录方式排序、哪些字段不许上云、本地与云端合并策略)见
-> [`docs/AUTH_DESIGN.md`](AUTH_DESIGN.md)。**P0 本地身份层已落地**(`assets/auth.js` + 顶栏登录面板),
-> 数据仍留本机,未启用任何后端。
+**P0 本地身份层**(`assets/auth.js`):账号只存浏览器 `localStorage`(昵称 + 选填邮箱,绝不存证件号/手机号),
+刷新保持、不发起任何网络请求。它镜像身份进 `store.account` 便于备份,但状态判断仍全部走 `engine.js`。
+
+**P1 云端同步**(`assets/cloud.js`,本阶段已落地):真实云账号(手机/邮箱 OTP)+ 单表 `user_state` 同步,
+换设备看到同一份关注 / 勾选 / 设置。**证件类字段(姓名/身份证号/手机号/紧急联系人)永不进云** —— 这是硬红线。
+
+P1 的云上结构:
+
+| 层 | 说明 |
+|---|---|
+| `assets/cloud.js` | UMD。持有 `PC = publicConfig`(`endpoint` / `oauthRelayBaseUrl` / `publishableKey`),`init()` 建 `cloud = W.createWorkBuddyCloud(...)`。**前端不硬编码 endpoint、不手写 `/.cloud/**` fetch** |
+| `assets/engine.js` | 纯函数 `ME.mergeStates(local, cloud)` —— 首次登录是「合并」不是「覆盖」:`watching` 按 raceId 并集且冲突取 `updatedAt` 较新者、`checklists` 并集(true 优先)、`settings` 本地优先、`custom` 按 id 并集(本地优先) |
+| `assets/store.js` | `toSyncBlob()` 只吐 `{watching,checklists,settings,custom,savedAt}`(**不含 profile/account**);`applySyncBlob(blob)` 写回这五样,profile/account 原样不动 |
+| 云表 `user_state` | `id` / `owner_id TEXT NOT NULL DEFAULT auth.uid()` / `state_json JSONB` / `updated_at` / `created_at`;表级 RLS `owner_id = auth.uid()`,只授权 `authenticated`;`INSERT` 也不许带 `owner_id`,由服务端默认填 |
+
+> 完整方案(登录方式排序、哪些字段不许上云、合并策略、分期 P0→P1→P2→P3)见
+> [`docs/AUTH_DESIGN.md`](AUTH_DESIGN.md)。**P0 + P1 都已落地**(本地身份 + 云端同步),
+> 数据部分上云、证件类字段仍留本机。
 
 ⚠️ **网站与小程序是两个独立应用 → 两个独立云环境,数据默认不共享。**
 小程序是另一套代码(WXML/WXSS/JS + `app.json`),**不能**从 HTML/DOM 转换或重组。
@@ -285,6 +300,16 @@ git status --short                        # 看有没有意外文件
 git diff --cached | grep -nE "ghp_|@|身份证"   # 粗筛 token / 邮箱
 ```
 
+### 云端同步的隐私边界
+
+即使开启了 P1 云端同步,**涉证件字段也只留本机**:
+
+- `toSyncBlob()` 的产出只有 `watching` / `checklists` / `settings` / `custom` / `savedAt` 五样,
+  不含 `profile`(姓名/身份证号/手机号/紧急联系人)与 `account`(昵称镜像)
+- 云表 `user_state.state_json` 里因此**永远不会有证件号/手机号**
+- 合并写回 `applySyncBlob()` 只动这五样,绝不回写 profile
+- 回归测试(`tests/regression.js`)有断言守护「blob 不含 profile/account」「applySyncBlob 不写 profile」
+
 ---
 
 ## 8. 推送代码
@@ -311,12 +336,13 @@ git add -A && git commit -m "..." && git push     # 没有凭据助手时会询�
 
 - [x] **`LICENSE` 已定:保留所有权利(非开源)** —— 见仓库根 `LICENSE`。
       将来若要开源,只需替换该文件并删掉 README「许可」一节中的限制说明
-- [x] **一键自检已加** —— `sh scripts/check.sh`:语法 + 83 项断言 + 巡检冒烟 + 隐私守卫
+- [x] **一键自检已加** —— `sh scripts/check.sh`:语法 + 96 项断言 + 巡检冒烟 + 隐私守卫
 - [ ] **(可选)接 GitHub Actions** —— 想让 push 时自动跑同批检查的话,
       需要带 `workflow` 权限的令牌(只有 `repo` 会被 GitHub 拒收)。
       脚本 `scripts/check.sh` 已经就绪,套一层 workflow 即可
 - [ ] 微信小程序:需要 AppID 与资质,且必须**新建小程序应用重新构建**(不能从 HTML 转换)
-- [ ] 接后端:走 `assets/store.js` 的 `[SEAM]`;注意网站与小程序是两个独立云环境
+- [x] **P1 云端同步已落地**:真实云账号 + 单表 `user_state` + RLS,换设备同步关注/勾选/设置;证件类字段仍留本机(见 §3)
+- [ ] 接后端(多表拆分 P2):把单表拆成 `watchlist`/`checklists`/`profiles` 等多表,巡检迁服务端才能「不开机也收邮件」;注意网站与小程序是两个独立云环境
 - [ ] `tests/regression.js` 的防漂移基线:理想做法是把当前基线**冻结成 JSON 快照**,
       之后就能删掉 `legacy/marathon_registrar.html`(现在它既是历史又是夹具,角色混着)
 - [ ] 赛事数据目前**手工维护**在 `engine.js` 的 `SEED_*` 里。若赛历规模再涨,
@@ -324,8 +350,8 @@ git add -A && git commit -m "..." && git push     # 没有凭据助手时会询�
 
 ### 开放问题
 
-1. **是否要支持多用户?** 现在每个浏览器各存各的 `localStorage`,天然单用户。
-   多用户需要后端 + 登录,是量级变化。**做之前先确认真的需要。**
+1. **多用户(P1 已部分回答):** 已通过云端账号实现跨设备同步(每人各自隔离,互不可见)。
+   剩下的是「微信扫码 / 跑团共享」等更强社交能力,按需再上。
 2. **越野赛收录要不要继续扩?** 现在 36 场。继续扩的边际价值在于长尾赛事,
    但维护成本(核实门槛 / 窗口)是非线性的。
 3. **`reports/` 要不要留档?** 现在每天重新生成且被 gitignore。如果需要历史追溯,
@@ -338,7 +364,7 @@ git add -A && git commit -m "..." && git push     # 没有凭据助手时会询�
 接手后跑一遍,全绿就算环境没问题:
 
 ```bash
-node tests/regression.js                      # 期望:83 通过 / 0 失败
+node tests/regression.js                      # 期望:96 通过 / 0 失败
 node tools/digest.js                          # 期望:退出码 0,reports/ 下三个文件
 node tools/digest.js --date 2026-10-07T17:30  # 指定日期+时刻,便于复现
 cp data/marathon_watchlist.example.json data/marathon_watchlist.json   # 首次才需要
@@ -353,7 +379,7 @@ cp data/marathon_watchlist.example.json data/marathon_watchlist.json   # 首次�
 
 | 检查项 | 期望 |
 |---|---|
-| `node tests/regression.js` | `83 通过 / 0 失败` |
+| `node tests/regression.js` | `96 通过 / 0 失败` |
 | `tools/digest.js` 退出码 | `0` |
 | 两个数据文件都缺失时 | 退出码 `4` + 明确指引 |
 | 只有模板时(新克隆的默认状态) | 退出码 `0` + 一条告警 |
@@ -383,3 +409,7 @@ cp data/marathon_watchlist.example.json data/marathon_watchlist.json   # 首次�
 8. **动效必须能整个关掉** —— 新增动画一律纯 CSS,并在文件末尾那条
    `@media (prefers-reduced-motion:reduce)` 里被统一关停;装饰性脚本放 `motion.js`,
    保持「删掉它页面照常工作」。
+9. **云端同步只放安全子集,证件类字段永不进云** —— `toSyncBlob()` 只吐
+   `watching` / `checklists` / `settings` / `custom` / `savedAt`,绝不带 `profile` / `account`;
+   `applySyncBlob()` 只写回这五样。改云同步逻辑时,这条不可破;`tests/regression.js` 有断言守门。
+   网络层只有 `assets/cloud.js` 一个出口,**不要另起 fetch 通道**(端点、密钥一律走 `publicConfig`)。
