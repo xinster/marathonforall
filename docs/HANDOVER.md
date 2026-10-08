@@ -108,7 +108,8 @@ marathon-platform/           ★ 产品,线上部署目录
   assets/engine.js           ★ 唯一状态机 + 60 场赛事种子(纯函数,零 DOM)
   assets/store.js            数据层 / 存储适配器 —— read()/write() 有 [SEAM] 标记
   assets/app.js              界面层
-  assets/styles.css          样式(路跑=青绿 --ac,越野=土黄 --amb)
+  assets/styles.css          样式 + 全部动画(路跑=青绿 --ac,越野=土黄 --amb)
+  assets/motion.js           动效装饰(计时器/进度条/KPI 数字)—— 可整个删除,不影响功能
   README.md                  详细设计与架构说明
 tools/
   digest.js                  每日巡检:算状态 → Markdown / HTML 邮件 / 紧急清单
@@ -126,7 +127,9 @@ legacy/                      历史产物,见 legacy/README.md
 scripts/check.sh             一键自检:语法 / 回归 / 巡检冒烟 / 隐私守卫
 ```
 
-**依赖顺序固定:`engine.js → store.js → app.js`。三者都不需要构建步骤。**
+**依赖顺序固定:`engine.js → store.js → app.js → motion.js`。四者都不需要构建步骤。**
+`motion.js` 是**纯装饰层**:只做顶栏计时器、赛道进度条、KPI 数字冲刺,不读写存储、
+不碰引擎。删掉它或让它加载失败,页面功能完全不受影响。
 
 ### 以后接后端
 
@@ -216,6 +219,23 @@ scripts/check.sh             一键自检:语法 / 回归 / 巡检冒烟 / 隐�
 **分类判定只走引擎的 `kindOf()`,界面一行硬编码都没有。** 以后要加 Skyrunning、
 山径徒步,只需在引擎里加一个 `kind`,界面自动多出一个分区。
 
+### 界面风格(「跑道 / 田径」动感风)
+
+主题是跑步:深色沥青顶栏(扫光 + 滚动分道虚线)、橙色分道线 `--run`、号码布式徽标、
+等宽表格数字的计时器字体、Hero 里循环跑过的跑者剪影、未来 60 天的滚动播报条、
+卡片入场错位 + 悬停速度残影。**动画全部是纯 CSS 关键帧**,不引入任何前端库。
+
+改视觉时遵守两条:
+
+1. **只改 `assets/styles.css`,不要动类名。** 回归测试按类名计数(见 §11 红线 7)。
+2. **新增装饰元素要避开会被计数的前缀** —— `kt` / `k-tag` / `kd` / `kpi` / `race ` / `lib-card`。
+   播报条条目因此定名 `.tbi`。
+
+`@media (prefers-reduced-motion:reduce)` 里把动画与过渡一次性关掉 ——
+用户系统开了「减少动态效果」就必须全站静止,这是硬要求。渐变字用了
+`background-clip:text` + `color:transparent`,外面套了 `@supports` 并留纯色兜底,
+否则旧内核下整段标题会消失。
+
 ---
 
 ## 6. 已知脆弱点
@@ -227,7 +247,8 @@ scripts/check.sh             一键自检:语法 / 回归 / 巡检冒烟 / 隐�
 | `data/marathon_watchlist.json` | 含个人档案(姓名 / 身份证号 / 手机号) | **已 gitignore**。入库的只有 `.example.json` 模板。见下节 |
 | 本机 Git 凭据 | 无凭据助手,`git push` 每次都要 token | 见 §8 |
 | 邮件链路 | 依赖外部 CLI(默认 `agently-cli`)的**授权有效期**;过期后 `notify.js` 会退出码 `11` | 提示里直接给了重新授权命令;接入方式与排查表见 `docs/MAIL_SETUP.md` |
-| 无头浏览器截图 | 本沙箱**不可用**(见 WORKLOG §11) | 验证 UI 一律用 DOM 存根回归 |
+| 无头浏览器截图 | 本沙箱**不可用**(见 WORKLOG §13) | 验证 UI 一律用 DOM 存根回归 |
+| 界面视觉 | 回归测试**按类名计数**,改类名会让一批断言同时变红 | 视觉改动只落在 `styles.css`;见 §11 红线 7 |
 
 ---
 
@@ -332,7 +353,7 @@ cp data/marathon_watchlist.example.json data/marathon_watchlist.json   # 首次�
 | `notify.js` 授权失效 | 退出码 `11` + 提示重新授权 |
 | `git status` | 干净(或只有预期的改动) |
 | `git ls-files` 不含 | `.workbuddy/` · `reports/` · `AGENT_MAIL_SETUP.md` · 活的 watchlist |
-| 线上站点 | 200,且 `#kindTabs` / `#mineKind` / `#kindBar` 齐备 |
+| 线上站点 | 200,且 `#kindTabs` / `#mineKind` / `#kindBar` 齐备;`assets/motion.js` 亦为 200 |
 
 `sh scripts/check.sh` 会把上面这几项一次跑完(语法 / 回归 / 巡检冒烟 / 隐私守卫),
 全绿则退出码 0。**改动代码后跑它就够了。**
@@ -347,3 +368,10 @@ cp data/marathon_watchlist.example.json data/marathon_watchlist.json   # 首次�
 4. **不要把「未设截止日」加回「紧急」集合** —— 会导致天天报警
 5. **不要假设越野赛有报名窗口** —— 31/60 场处于「待公布」是正常的
 6. **零依赖是特性,不是疏忽** —— 不引入测试框架、打包器、前端库
+7. **改界面只改 CSS,类名一个都不要动** —— 回归测试 C 段按类名计数
+   (`class="kpi` 8 / `class="lib-card` 60 / `class="kt` 3 / `class="kind-sec` 2,
+   另有 `ks-desc` / `k-tag` / `lc-dist` / `kd"` / `field"`)。改名会让一批断言同时变红。
+   `app.js` 只做**纯增量**(加元素、加属性),既有类名与 DOM 结构保持原样。
+8. **动效必须能整个关掉** —— 新增动画一律纯 CSS,并在文件末尾那条
+   `@media (prefers-reduced-motion:reduce)` 里被统一关停;装饰性脚本放 `motion.js`,
+   保持「删掉它页面照常工作」。

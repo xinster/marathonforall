@@ -200,6 +200,24 @@
     $("#kindBar").innerHTML = '<span class="kb-l">已关注按类别</span>' + html;
   }
 
+  /* 赛道播报 —— 把 60 天内的节点压成一条横向滚动条。
+     纯装饰性表达,数据完全来自上面同一份 timeline(),不引入新的状态判断。 */
+  function renderTicker(tl) {
+    var wrap = $("#ticker"), track = $("#tickerTrack");
+    if (!wrap || !track) return;
+    if (!tl.length) { wrap.classList.remove("on"); track.innerHTML = ""; return; }
+    var items = tl.slice(0, 14).map(function (t) {
+      return '<span class="tbi">' +
+        '<i class="k-dot k-' + ME.kindOf(t.race) + '"></i>' +
+        '<b>' + (t.d === 0 ? "今天" : t.d + " 天后") + '</b>' +
+        esc(ME.fmtMd(t.date)) + ' · ' + esc(t.race.name) + ' · ' + t.label +
+        '</span>';
+    }).join("");
+    /* 复制一份,首尾相接才能无缝循环 */
+    track.innerHTML = items + items;
+    wrap.classList.add("on");
+  }
+
   /* ------------------------------------------------------------ 日期轴 */
 
   function timeline(days) {
@@ -271,6 +289,8 @@
         '<button class="mini" data-act="detail" data-id="' + t.race.id + '">详情</button>' +
         '</li>';
     }).join("") : '<li class="empty">未来 60 天没有已关注赛事的节点。</li>';
+
+    renderTicker(tl);
 
     var top = sorted(all).slice(0, 6);
     $("#dashTop").innerHTML = top.length ? top.map(card).join("")

@@ -28,7 +28,8 @@
 │   │   ├── engine.js             ★ 唯一状态引擎 + 赛事种子数据(纯函数,零 DOM)
 │   │   ├── store.js              数据层 / 存储适配器(接后端只有一个改动点)
 │   │   ├── app.js                界面层
-│   │   └── styles.css            样式
+│   │   ├── styles.css            样式 + 全部 CSS 动画(跑道 / 田径主题)
+│   │   └── motion.js             动效装饰(计时器 / 进度条 / KPI 数字),可整个删除
 │   └── README.md                 详细设计与架构说明
 ├── tools/
 │   ├── digest.js                 每日巡检:算窗口状态 → 生成 Markdown / HTML 邮件 / 紧急清单

@@ -3,11 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07211B">
 <title>马拉松与越野赛跟踪台 — 报名窗口跟踪与提醒</title>
 <meta name="description" content="关注你想要的马拉松与越野赛事,自动跟踪报名开放、截止、抽签公布与缴费截止,并在关键节点提醒你。">
 <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
+
+<!-- 赛道进度:随滚动推进 -->
+<div id="laneProgress" class="lane-progress" aria-hidden="true"></div>
+<!-- 速度残影:横向流光循环掠过,位于内容之下 -->
+<div class="fx" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
 
 <header class="topbar">
   <div class="brand"><span class="logo"></span>赛事跟踪台<span class="badge">本地版</span></div>
@@ -18,6 +24,7 @@
     <button data-tab="profile">我的档案</button>
     <button data-tab="notify">提醒与导出</button>
   </nav>
+  <span class="clock" id="clock">--:--:--</span>
   <button class="acct-chip" data-act="account">本地模式</button>
 </header>
 
@@ -26,7 +33,27 @@
   <!-- ============================ 看板 ============================ -->
   <section id="view-dash" class="view on">
     <div class="hero">
+      <!-- 跑道分道线 -->
+      <div class="hero-lane" aria-hidden="true"></div>
+      <!-- 跑者:沿赛道循环跑过 -->
+      <svg class="runner" viewBox="0 0 140 104" aria-hidden="true" focusable="false">
+        <g class="rn-trail">
+          <line class="rn-t1" x1="8"  y1="50" x2="30" y2="50"/>
+          <line class="rn-t2" x1="2"  y1="64" x2="26" y2="64"/>
+          <line class="rn-t3" x1="10" y1="78" x2="32" y2="78"/>
+        </g>
+        <g class="rn-body">
+          <path class="rn-leg-b" d="M60 60 L46 78 L38 94" stroke="#FFB01F" stroke-width="7"/>
+          <path class="rn-arm-b" d="M76 34 L66 48 L58 58" stroke="#7FBFA9" stroke-width="5.5"/>
+          <path d="M60 60 L76 34" stroke="#FFFFFF" stroke-width="8"/>
+          <path class="rn-leg-a" d="M60 60 L76 74 L80 94" stroke="#FF5A1F" stroke-width="7"/>
+          <path class="rn-arm-a" d="M76 34 L88 50 L84 64" stroke="#FFFFFF" stroke-width="5.5"/>
+          <circle cx="84" cy="24" r="10" fill="#FFFFFF"/>
+        </g>
+      </svg>
+
       <div>
+        <p class="hero-kick">Race Tracker · 报名窗口跟踪与提醒</p>
         <h1 id="todayLabel">—</h1>
         <p class="sub">每天该做什么,系统已经替你算好 —— 你只需要在关键节点出现。</p>
       </div>
@@ -34,6 +61,12 @@
         <button class="mini primary" data-tab="lib">去赛事库挑比赛</button>
         <button class="mini" data-tab="notify">提醒设置</button>
       </div>
+    </div>
+
+    <!-- 赛道播报:未来节点滚动掠过 -->
+    <div id="ticker" class="ticker">
+      <span class="ticker-live">LIVE</span>
+      <div class="ticker-track" id="tickerTrack"></div>
     </div>
 
     <div id="actionBanner" class="banner"></div>
@@ -123,7 +156,8 @@
   · 当前为<b>本地版</b>:档案与关注清单保存在你自己的浏览器里,换设备不会自动同步。<br>
   · 收录<b>马拉松 / 路跑</b>与<b>越野赛</b>两类赛事,<b>全程分类展示</b>:赛事库按类型分区、我的关注可按类型筛选、看板顶部给出两类各自的进行中数量。两类在赛制、资格门槛与材料要求上完全不同 —— 越野赛普遍需要 ITRA 表现分、UTMB 指数或跑石,且赛前强制装备逐项检查。<br>
   · 日期均标注了可信度:<b>官方公告</b> / 媒体多源 / 按往年推算 / 待公布 —— 最终以组委会官方公告为准。越野赛的报名窗口公布得普遍比路跑晚,「待公布」占比较高属正常。<br>
-  · 状态判断由 <code>assets/engine.js</code> 统一提供,页面、每日巡检脚本与后续小程序共用同一份逻辑,不会出现"网页说待缴费、提醒说已截止"。
+  · 状态判断由 <code>assets/engine.js</code> 统一提供,页面、每日巡检脚本与后续小程序共用同一份逻辑,不会出现"网页说待缴费、提醒说已截止"。<br>
+  · 界面动效纯 CSS 实现,系统开启「减少动态效果」后自动全部静止。
 </footer>
 
 <div id="modal" class="modal"><div id="modalBox" class="modal-box"></div></div>
@@ -133,5 +167,6 @@
 <script src="assets/engine.js"></script>
 <script src="assets/store.js"></script>
 <script src="assets/app.js"></script>
+<script src="assets/motion.js"></script>
 </body>
 </html>

@@ -37,6 +37,7 @@ for f in \
   marathon-platform/assets/engine.js \
   marathon-platform/assets/store.js \
   marathon-platform/assets/app.js \
+  marathon-platform/assets/motion.js \
   tools/digest.js \
   tools/notify.js \
   tests/regression.js
