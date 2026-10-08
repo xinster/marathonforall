@@ -190,7 +190,7 @@ sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
 vm.runInContext(fs.readFileSync(DIR + "/assets/engine.js", "utf8"), sandbox, { filename: "engine.js" });
 sandbox.window.ME = sandbox.ME;
-for (const f of ["assets/store.js", "assets/app.js"]) {
+for (const f of ["assets/store.js", "assets/auth.js", "assets/app.js"]) {
   vm.runInContext(fs.readFileSync(DIR + "/" + f, "utf8"), sandbox, { filename: f });
 }
 const txt = s => String(s || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();

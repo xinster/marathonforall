@@ -566,3 +566,38 @@ node tests/regression.js
 
 > 之所以不用 agent-browser:需要约 500MB Chromium,而 DOM 存根已经能覆盖
 > 「状态机 + 渲染逻辑」这两处真正会出错的地方。
+
+## 15. 阶段十一:P0 本地身份层(10-08 14:30,本阶段)
+
+用户说「那就开始吧」,落地 `docs/AUTH_DESIGN.md` 里的 **P0**:本机身份 + 登录面板 + 顶栏昵称,
+**数据仍留本地**,不碰云、不碰引擎。这一步专门绕开「云被手动取消」的约束 —— P0 是纯前端,
+不需要任何后端或授权。
+
+**改动清单**
+
+| 文件 | 改动 |
+|---|---|
+| `assets/auth.js` | **新增**(UMD)。本地账号存 `localStorage` 的 `mt_account_v1`:昵称 + 选填邮箱,**绝不存证件号/手机号**。提供 `get / isAuthed / signIn / signOut / onChange`,刷新保持、多标签页 `onChange` 同步 |
+| `index.html` | 给顶栏 `.acct-chip` 加 `id="acctChip"`;`<script>` 在 `store.js` 与 `app.js` 之间插入 `auth.js`(加载顺序 `engine → store → auth → app → motion`) |
+| `assets/app.js` | `openAccount()` 改成真实身份表单:未登录显示昵称+邮箱输入,已登录显示信息+退出;点击代理加 `acct-save` / `acct-out`;启动段把 `Auth.get()` 镜像进 `S.state.account`(便于备份 JSON 带昵称),并渲染顶栏 chip |
+| `assets/styles.css` | 新增 `.acct-chip.on`(登录态带脉冲点)、`.acct` / `.acct-row`(信息表)、`.acct-intro` / `.acct-form` / `.acct-fld` / `.acct-in` / `.acct-note`(表单)。全走 `.acct-*` / 复用类,**不碰被回归计数的类名** |
+
+**设计要点(和 AUTH_DESIGN 一致)**
+
+- 隐私红线:P0 只存昵称与选填邮箱;证件号/手机号一律不进 `auth.js`,也不经 `store` 上传
+- 镜像而非双写:身份真值在 `auth.js`,`store.account` 只是镜像,备份 JSON 才会带上昵称
+- 退出不等于清数据:`signOut` 只清身份,关注清单/档案仍在
+- 引擎零改动:状态判断仍是 `engine.js` 唯一来源,本阶段 83 项断言一行没改
+
+**验证**
+
+- `node tests/regression.js` → 83/83(存根已补加载 `auth.js`,顺带验证了加载顺序)
+- `auth.js` 单元检查 10/10:登录/退出/持久化/刷新保持/`onChange`/空昵称忽略
+- 端到端集成冒烟 10/10:点账号 → 填昵称 → 保存 → 顶栏变昵称 → store 镜像 → 退出 → 复位
+- `sh scripts/check.sh` → 全通过
+
+**下一步(未做,等用户拍板)**
+
+- P1 上云:接后端单表 blob + 离线缓存 + `ME.mergeStates` 合并策略(换设备看到同一份关注)
+- 登录方式:微信扫码 / 手机验证码(需后端)
+- 证件信息同不同步:本阶段**默认不同步**,沿用 AUTH_DESIGN 的建议

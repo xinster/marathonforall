@@ -62,6 +62,7 @@ sh scripts/check.sh
 | 架构为什么不许改、状态机 15 态、改代码红线 | **本文(§3 / §4 / §11)** |
 | 每天怎么自动跑、网站怎么发布、赛历数据怎么改 | `docs/OPERATIONS.md` |
 | 邮件通道怎么接、报错怎么查 | `docs/MAIL_SETUP.md` |
+| 账号体系 / 用户登录怎么落地 | `docs/AUTH_DESIGN.md`(完整方案);**P0 本地身份已落地** |
 | 为什么当初这么做、踩过哪些坑 | `docs/WORKLOG.md` |
 
 ---
@@ -110,6 +111,7 @@ marathon-platform/           ★ 产品,线上部署目录
   assets/app.js              界面层
   assets/styles.css          样式 + 全部动画(路跑=青绿 --ac,越野=土黄 --amb)
   assets/motion.js           动效装饰(计时器/进度条/KPI 数字)—— 可整个删除,不影响功能
+  assets/auth.js            本地身份层(P0):昵称/选填邮箱存 localStorage,不联网、不碰引擎
   README.md                  详细设计与架构说明
 tools/
   digest.js                  每日巡检:算状态 → Markdown / HTML 邮件 / 紧急清单
@@ -127,14 +129,20 @@ legacy/                      历史产物,见 legacy/README.md
 scripts/check.sh             一键自检:语法 / 回归 / 巡检冒烟 / 隐私守卫
 ```
 
-**依赖顺序固定:`engine.js → store.js → app.js → motion.js`。四者都不需要构建步骤。**
+**依赖顺序固定:`engine.js → store.js → auth.js → app.js → motion.js`。五者都不需要构建步骤。**
 `motion.js` 是**纯装饰层**:只做顶栏计时器、赛道进度条、KPI 数字冲刺,不读写存储、
 不碰引擎。删掉它或让它加载失败,页面功能完全不受影响。
+`auth.js` 是**本地身份层(P0)**:账号只存浏览器 `localStorage`,刷新保持、不发起任何网络请求、
+不持有密钥;它镜像身份进 `store.account` 便于备份,但状态判断仍全部走 `engine.js`。
 
 ### 以后接后端
 
 `assets/store.js` 里 `read()` / `write()` 打了 `[SEAM]` 标记 ——
 接后端只有这一个改动点,界面层不用动。
+
+> 完整方案(登录方式排序、哪些字段不许上云、本地与云端合并策略)见
+> [`docs/AUTH_DESIGN.md`](AUTH_DESIGN.md)。**P0 本地身份层已落地**(`assets/auth.js` + 顶栏登录面板),
+> 数据仍留本机,未启用任何后端。
 
 ⚠️ **网站与小程序是两个独立应用 → 两个独立云环境,数据默认不共享。**
 小程序是另一套代码(WXML/WXSS/JS + `app.json`),**不能**从 HTML/DOM 转换或重组。

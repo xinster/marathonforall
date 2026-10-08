@@ -29,6 +29,7 @@
 │   │   ├── store.js              数据层 / 存储适配器(接后端只有一个改动点)
 │   │   ├── app.js                界面层
 │   │   ├── styles.css            样式 + 全部 CSS 动画(跑道 / 田径主题)
+│   │   ├── auth.js               本地身份层(昵称/邮箱存 localStorage,不联网)
 │   │   └── motion.js             动效装饰(计时器 / 进度条 / KPI 数字),可整个删除
 │   └── README.md                 详细设计与架构说明
 ├── tools/
@@ -43,6 +44,7 @@
 │   ├── HANDOVER.md               交接必读:架构、状态机、已知脆弱点、改代码红线
 │   ├── WORKLOG.md                工程记录:每个阶段的决策、踩的坑、怎么验证的
 │   ├── MAIL_SETUP.md             邮件通道怎么接、坏了怎么排查
+│   ├── AUTH_DESIGN.md            账号体系 / 用户登录设计方案(草案,未实施)
 │   └── OPERATIONS.md             每日巡检怎么长期跑、网站怎么发布、数据怎么改
 ├── legacy/                       历史产物(其中一个被测试当作基线,勿删,见 legacy/README.md)
 ├── scripts/check.sh              一键自检:语法 / 回归 / 巡检冒烟 / 隐私守卫(零权限要求)
@@ -145,6 +147,7 @@ data/marathon_watchlist.json           ← 你的实际文件,已被 gitignore �
 - [`docs/WORKLOG.md`](docs/WORKLOG.md) —— 怎么走到今天的:每个阶段的决策依据、踩过的坑、怎么验证的
 - [`docs/OPERATIONS.md`](docs/OPERATIONS.md) —— 巡检怎么长期跑、网站怎么发布、赛历数据怎么改
 - [`docs/MAIL_SETUP.md`](docs/MAIL_SETUP.md) —— 邮件通道接入与故障排查
+- [`docs/AUTH_DESIGN.md`](docs/AUTH_DESIGN.md) —— 用户登录 / 账号体系设计方案(设计草案,未实施)
 - [`legacy/README.md`](legacy/README.md) —— 历史产物的角色说明(其中一个被测试当作基线,**勿删**)
 
 ## 许可

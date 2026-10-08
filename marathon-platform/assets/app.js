@@ -7,7 +7,7 @@
 (function () {
   "use strict";
 
-  var ME = window.ME, S = window.Store;
+  var ME = window.ME, S = window.Store, Auth = window.Auth;
   var $ = function (s) { return document.querySelector(s); };
   var $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
   var esc = ME.esc;
@@ -777,20 +777,47 @@
     render();
   }
 
+  function renderAcctChip() {
+    var el = $("#acctChip"); if (!el) return;
+    var a = Auth.get();
+    if (a && a.name) { el.textContent = a.name; el.classList.add("on"); }
+    else { el.textContent = "登录"; el.classList.remove("on"); }
+  }
+
   function openAccount() {
-    var a = S.state.account;
+    var a = Auth.get();
+    if (a && a.name) {
+      var meta = S.state.meta.updated ? new Date(S.state.meta.updated).toLocaleString("zh-CN") : "—";
+      showModal(
+        '<div class="m-head"><div><h3>账号</h3><p class="m-sub">本地身份 · 已登录</p></div>' +
+        '<button class="x" data-act="close">×</button></div>' +
+        '<div class="acct">' +
+          '<div class="acct-row"><span>昵称</span><b>' + esc(a.name) + '</b></div>' +
+          '<div class="acct-row"><span>邮箱</span><b>' + (a.email ? esc(a.email) : "—") + '</b></div>' +
+          '<div class="acct-row"><span>登录方式</span><b>本机身份</b></div>' +
+          '<div class="acct-row"><span>数据存放</span><b>当前浏览器</b></div>' +
+          '<div class="acct-row"><span>已关注赛事</span><b>' + S.watchedRaces().length + ' 场</b></div>' +
+          '<div class="acct-row"><span>最近保存</span><b>' + meta + '</b></div>' +
+        '</div>' +
+        '<p class="m-tip">换设备 / 多端同步需要先开启后端服务。开启后,这里会多出「云端同步」开关,关注清单与档案可随身带走。</p>' +
+        '<div class="m-acts"><button class="mini" data-act="close">关闭</button>' +
+        '<button class="mini danger" data-act="acct-out">退出登录</button></div>'
+      );
+      return;
+    }
     showModal(
-      '<div class="m-head"><div><h3>账号与同步</h3><p class="m-sub">当前为本地模式</p></div>' +
+      '<div class="m-head"><div><h3>账号与同步</h3><p class="m-sub">本地模式 · 可随时升级</p></div>' +
       '<button class="x" data-act="close">×</button></div>' +
-      '<div class="acct">' +
-        '<div class="acct-row"><span>登录方式</span><b>本地(未登录)</b></div>' +
-        '<div class="acct-row"><span>数据存放</span><b>当前浏览器</b></div>' +
-        '<div class="acct-row"><span>已关注赛事</span><b>' + S.watchedRaces().length + ' 场</b></div>' +
-        '<div class="acct-row"><span>最近保存</span><b>' + (S.state.meta.updated ? new Date(S.state.meta.updated).toLocaleString("zh-CN") : "—") + '</b></div>' +
-      '</div>' +
-      '<p class="m-tip">微信登录与云端同步需要先开启后端服务。开启后:换设备能接着用、多人各自关注互不干扰、并解锁微信与邮件提醒。</p>' +
-      '<div class="m-acts"><button class="mini" data-act="close">知道了</button>' +
-      '<button class="mini primary" data-act="backup">先导出备份</button></div>'
+      '<div class="acct-intro">先设置一个本机身份,关注清单与档案会带上你的标识。当前数据仍只保存在这台浏览器。</div>' +
+      '<div class="acct-form">' +
+        '<label class="acct-fld"><span>昵称</span><input class="acct-in" id="acctName" type="text" placeholder="例如:星哥、MarathonFan" maxlength="20" autocomplete="nickname"></label>' +
+        '<label class="acct-fld"><span>邮箱(选填)</span><input class="acct-in" id="acctEmail" type="text" placeholder="用于后续云端同步,现在不发送任何邮件" maxlength="80" autocomplete="email"></label>' +
+        '<p class="acct-note">本地版不会把证件号 / 手机号上传。邮箱仅在你主动开启云端同步后才会使用。</p>' +
+        '<div class="m-acts">' +
+          '<button class="mini" type="button" data-act="close">稍后</button>' +
+          '<button class="mini primary" type="button" data-act="acct-save">保存身份</button>' +
+        '</div>' +
+      '</div>'
     );
   }
 
@@ -848,6 +875,28 @@
       case "ics1": exportICS(id); break;
       case "icsAll": exportICS(null); break;
       case "addraceopen": openAddRace(); break;
+      case "acct-save": {
+        var nm = $("#acctName") ? $("#acctName").value.trim() : "";
+        if (!nm) { toast("请先填写昵称"); break; }
+        var em = $("#acctEmail") ? $("#acctEmail").value.trim() : "";
+        var acc = Auth.signIn({ name: nm, email: em });
+        S.state.account = Object.assign(S.state.account, {
+          nickname: acc.name, avatarChar: acc.avatar, provider: "local", createdAt: acc.createdAt
+        });
+        S.save();
+        renderAcctChip();
+        toast("身份已保存 · " + acc.name);
+        hideModal();
+        break;
+      }
+      case "acct-out":
+        Auth.signOut();
+        S.state.account = Object.assign(S.state.account, { nickname: "", avatarChar: "", provider: "local", createdAt: null });
+        S.save();
+        renderAcctChip();
+        toast("已退出登录");
+        hideModal();
+        break;
       case "account": openAccount(); break;
       case "backup": download("marathon-backup-" + stamp() + ".json", S.exportJSON(), "application/json"); break;
       case "reset":
@@ -980,6 +1029,20 @@
   /* ============================================================ 启动 */
 
   S.load();
+
+  /* 本地身份(P0):把账号信息镜像进 store,便于备份 JSON 带上昵称;不重复写盘 */
+  (function syncAccount() {
+    var a = Auth.get();
+    if (a && a.name) {
+      S.state.account = Object.assign(S.state.account, {
+        nickname: a.name, avatarChar: a.avatar, provider: "local", createdAt: a.createdAt
+      });
+      S.save();
+    }
+  })();
+  renderAcctChip();
+  if (Auth.onChange) Auth.onChange(renderAcctChip);
+
   render();
   fireDue();
   S.subscribe(function () {
