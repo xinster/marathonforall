@@ -1086,12 +1086,17 @@
       lastSyncAt = null; refreshCloudUI(); renderAcctChip(); toast("已退出云端(本地数据保留)");
     });
   }
-  /* 微信扫码登录:调 SDK 的 OAuth relay 跳转,浏览器会被重定向到微信确认页,
-     用户确认后 relay 带 code 跳回本页,由启动段的 handleOAuthReturn 完成会话。 */
+  /* 微信扫码登录:SDK 的 signInWithOAuth 只返回授权 URL({data:{url}}),不负责跳转,
+     必须由本方 window.location.href 前往 relay 授权页;用户确认后 relay 带 code 跳回
+     本页,由启动段的 handleOAuthReturn 完成会话。 */
   function cloudWechat() {
     if (!Cloud.isReady()) { toast("云服务未连接"); return; }
+    toast("正在打开微信授权…");
     Cloud.wechatLogin(location.href).then(function (r) {
-      if (r && r.error) toast("微信登录发起失败:" + (r.error.message || r.error.kind));
+      if (r && r.error) { toast("微信登录发起失败:" + (r.error.message || r.error.kind)); return; }
+      var url = r && r.data && r.data.url;
+      if (url) { window.location.href = url; }
+      else { toast("微信登录未返回授权地址"); }
     });
   }
 
