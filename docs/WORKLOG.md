@@ -712,4 +712,54 @@ P0 阶段曾把云手动取消,这次重新 `activate` 时**故意复用同一�
 不在「报名中」也不在「已截止」—— 它们既没开也没关,归到任一边都会误导。越野赛大量处于「窗口未公布」,
 这样它们不会在「报名中」里被误标成可报。
 
+---
+
+## 18. 阶段十四:个人资料管家 —— 加密备份(A)+ 报名预填辅助(C)(10-08 21:50,本阶段)
+
+用户真实目的:把个人信息(姓名 / 身份证 / 手机号 / 紧急联系人等)记下来,以后报名时不用每次重填,
+最好能一键提交。先澄清了硬现实:**本平台是「赛事跟踪台」、没有报名 API**;真正报名在各自官网,
+那一步必然明文出境,所以「一键报名」目前走「备好资料 + 预填/复制、手动去官网提交」,而非自动 POST 第三方。
+
+用户拍板 **A + C**:
+- **A. 本机加密备份**:资料用口令加密成一份文件带走(换机 / U 盘),平台与云端都看不到明文。
+- **C. 报名预填辅助**:资料已可一键复制(已有 `ME.profileBlock` + 详情弹窗「复制报名资料」+ 档案侧栏「复制全部资料」),
+  本阶段把入口补到赛事库列表卡片(浏览时即可「复制资料」)。
+
+### 设计要点
+
+- **加密只在客户端、密钥只由口令派生**:`assets/crypto.js`(UMD,零依赖)用 Web Crypto
+  `PBKDF2(SHA-256, 25 万轮)` 派生 `AES-GCM-256` 密钥,随机 salt + 随机 iv。
+  密文结构 `{ v, alg, iter, salt, iv, ct }` 全部 base64。「口令遗忘 = 不可恢复」在 UI 明示。
+- **不破隐私红线**:云端 `user_state` 仍不含证件字段(§16 红线 9 不变);加密备份是**本机外带机制**,
+  密文文件离开本机也不怕泄露。`file://` 下 Web Crypto 不可用 → 禁用加密按钮并提示改用 https / localhost。
+- **`store.exportEncrypted(pass)` / `importEncrypted(text, pass)`**:加密整份 state(含 profile 证件)为密文 JSON;
+  解密后 `normalize` 写回。与明文 `exportJSON/importJSON` 并列,数据收口仍在 `store.js` 的 `[SEAM]` 哲学内。
+- **守红线 4/5**:加密导出/导入按钮走全局点击代理 `data-act="backupex"/"backupim"/"enc-ok"/"enc-cancel"`,
+  口令模态用新类名 `.enc-modal`(不碰被计数类名);赛事库复制按钮复用既有 `data-act="copy"`(已存在)。
+
+### 改动清单
+
+| 文件 | 改动 |
+|---|---|
+| `assets/crypto.js` | **新增**(UMD)。`MCrypto = { isAvailable, encryptText, decryptText }`;base64 兼容浏览器 btoa/atob 与 Node Buffer |
+| `assets/store.js` | 新增 `exportEncrypted(pass)` / `importEncrypted(text, pass)`(async),暴露到 `root.Store` |
+| `index.html` | 加载序 `engine → crypto → store → auth → cloud → app → motion`;备份面板加「导出/导入加密备份」+ 隐藏 `#importEncFile`;新增 `#encModal` 口令模态 |
+| `assets/app.js` | `openEncModal/closeEncModal/encOk` + `pendingEnc` 状态机;`renderLib` 卡片加「复制资料」;`backupex/backupim/enc-ok/enc-cancel` 点击代理;`importEncFile` change 读文件 → 弹口令 |
+| `assets/styles.css` | 新增 `.enc-modal` / `.enc-box` / `.enc-in` / `.enc-acts` / `.enc-warn`(纯 CSS,非计数类) |
+| `tests/crypto.test.js` | **新增**(独立,Node webcrypto):密文不含明文(姓名/证件/手机)/ 口令正确还原 / 错误口令失败 / 非法结构失败,共 5 项 |
+| `scripts/check.sh` | 语法检查加 `crypto.js`;新增「2b. 加密备份守卫」段调用 `tests/crypto.test.js`(失败即非零退出) |
+
+### 验证
+
+- `node tests/regression.js` → **99 通过 / 0 失败**(不变)
+- `node tests/crypto.test.js` → **5 项全过**(密文不含明文 / 错误口令失败 / 非法结构失败)
+- `sh scripts/check.sh` → 全绿(语法 / 99 回归 / 5 加密守卫 / 巡检冒烟 / 隐私守卫)
+- 本地预览 http://127.0.0.1:8787 复核:`#encModal` 容器、`assets/crypto.js` 引用、`app.js` 含 `backupex`、`renderLib` 含 `data-act="copy"` 均就位
+
+### 这一步后仍未做(等用户拍板)
+
+- **B 路线(客户端加密同步上云)**:若用户要「无感跨设备」而非手动带文件,再做口令派生密钥的密文同步(红线 9 需改写为「证件上云必须是客户端加密密文」)。
+- **D 路线(真·API 自动提交第三方)**:基本不可行(无稳定公开接口 / ToS / 验证码 / 支付),暂不做。
+- 当前「报名预填」是复制文本手动粘贴;若某些赛事官网支持「预填链接 / 表单回填参数」,可后续增强为生成带参 URL。
+
 

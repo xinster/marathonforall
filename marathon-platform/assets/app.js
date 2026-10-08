@@ -7,7 +7,7 @@
 (function () {
   "use strict";
 
-  var ME = window.ME, S = window.Store, Auth = window.Auth, Cloud = window.Cloud;
+  var ME = window.ME, S = window.Store, Auth = window.Auth, Cloud = window.Cloud, MCrypto = window.MCrypto;
   var $ = function (s) { return document.querySelector(s); };
   var $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
   var esc = ME.esc;
@@ -332,6 +332,7 @@
         '<span>' + x.prog.ok + '/' + x.prog.total + ' 材料就绪</span></div>' +
       '<div class="r-acts">' +
         '<button class="mini primary" data-act="open" data-id="' + r.id + '">去官网报名</button>' +
+        '<button class="mini" data-act="copy" data-id="' + r.id + '">复制资料</button>' +
         '<button class="mini" data-act="detail" data-id="' + r.id + '">详情</button>' +
         '<button class="mini" data-act="check" data-id="' + r.id + '">材料清单</button>' +
       '</div>' +
@@ -620,6 +621,61 @@
         : '<div class="side-missing ok"><b>材料已齐</b><p>报名窗口开启时可直接提交。</p></div>') +
       trailTip +
       '<button class="mini" data-act="copyprofile">复制全部资料</button>';
+  }
+
+  /* ====================================================== 加密备份(A 路线)
+     把整份本机数据(含证件字段)用用户口令加密成文件带走;导入时凭口令解密。
+     密钥只在本机由口令派生,平台/云端看不到明文。file:// 下 Web Crypto 不可用,
+     此时禁用并提示改用 https / localhost。 */
+
+  var pendingEnc = { mode: null, text: null };
+
+  function encAvail() { return !!(MCrypto && MCrypto.isAvailable && MCrypto.isAvailable()); }
+
+  function openEncModal(mode) {
+    if (!encAvail()) { toast("请通过 https 或 localhost 访问以启用加密备份"); return; }
+    pendingEnc.mode = mode;
+    var title = $("#encTitle"), tip = $("#encTip"), p2 = $("#encPass2"), warn = $("#encWarn");
+    warn.textContent = "";
+    $("#encPass").value = "";
+    if (mode === "export") {
+      title.textContent = "设置加密口令";
+      tip.textContent = "这个口令用于加密整份备份文件;口令遗忘将无法恢复,请务必记牢。";
+      p2.hidden = false;
+    } else {
+      title.textContent = "输入备份口令";
+      tip.textContent = "输入导出该备份时设置的口令以解密并恢复本机数据。";
+      p2.hidden = true;
+    }
+    $("#encModal").hidden = false;
+    setTimeout(function () { $("#encPass").focus(); }, 30);
+  }
+
+  function closeEncModal() {
+    $("#encModal").hidden = true;
+    pendingEnc.mode = null;
+    pendingEnc.text = null;
+  }
+
+  function encOk() {
+    var pass = $("#encPass").value;
+    var warn = $("#encWarn");
+    if (!pass) { warn.textContent = "请输入口令"; return; }
+    if (pendingEnc.mode === "export") {
+      if (pass !== $("#encPass2").value) { warn.textContent = "两次输入的口令不一致"; return; }
+      S.exportEncrypted(pass).then(function (cipher) {
+        download("marathon-secure-backup-" + stamp() + ".json", JSON.stringify(cipher, null, 2), "application/json");
+        closeEncModal();
+        toast("已导出加密备份文件");
+      }).catch(function (e) { warn.textContent = e.message; });
+    } else if (pendingEnc.mode === "import") {
+      if (!pendingEnc.text) { closeEncModal(); return; }
+      S.importEncrypted(pendingEnc.text, pass).then(function () {
+        closeEncModal();
+        render();
+        toast("已从加密备份恢复");
+      }).catch(function (e) { warn.textContent = e.message; });
+    }
   }
 
   /* ====================================================== 提醒与导出 */
@@ -1114,6 +1170,10 @@
         }
         break;
       case "import": $("#importFile").click(); break;
+      case "backupex": openEncModal("export"); break;
+      case "backupim": $("#importEncFile").click(); break;
+      case "enc-ok": encOk(); break;
+      case "enc-cancel": closeEncModal(); break;
       case "notifyperm": requestNotif(); break;
     }
   });
@@ -1177,6 +1237,16 @@
         catch (err) { toast("导入失败:" + err.message); }
       };
       fr.readAsText(f);
+      t.value = "";
+    }
+    if (t.id === "importEncFile") {
+      var f2 = t.files && t.files[0]; if (!f2) return;
+      var fr2 = new FileReader();
+      fr2.onload = function () {
+        pendingEnc.text = String(fr2.result);
+        openEncModal("import");
+      };
+      fr2.readAsText(f2);
       t.value = "";
     }
   });

@@ -413,3 +413,9 @@ cp data/marathon_watchlist.example.json data/marathon_watchlist.json   # 首次�
    `watching` / `checklists` / `settings` / `custom` / `savedAt`,绝不带 `profile` / `account`;
    `applySyncBlob()` 只写回这五样。改云同步逻辑时,这条不可破;`tests/regression.js` 有断言守门。
    网络层只有 `assets/cloud.js` 一个出口,**不要另起 fetch 通道**(端点、密钥一律走 `publicConfig`)。
+10. **本机加密备份(A 路线)可外带证件字段,但密钥只由口令派生** —— `assets/crypto.js`
+   用 `PBKDF2(SHA-256, 25 万轮) + AES-GCM-256`,口令永不离开本机,密文文件落 U 盘 / 换机都安全;
+   `file://` 下 Web Crypto 不可用,此时**禁用加密按钮并提示改用 https / localhost**。`tests/crypto.test.js`
+   守卫「密文不含明文 / 错误口令失败」。档案仍**只留本机**,云端 `user_state` 不含证件字段(红线 9)不变。
+   ⚠️ 若将来要做 B 路线(加密同步上云),红线 9 需改写为「证件上云必须是客户端加密密文」,且 `ME`/`store`
+   的 blob 结构要随之调整,回归断言要补「上云的是密文不是明文」。

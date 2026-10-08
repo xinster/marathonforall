@@ -147,11 +147,31 @@
         <button class="mini" data-act="backup">导出 JSON 备份</button>
         <button class="mini" data-act="import">导入 JSON 备份</button>
         <button class="mini danger" data-act="reset">清空全部数据</button>
+        <hr>
+        <h3>加密备份</h3>
+        <p class="muted small">把整份本机数据(含姓名 / 身份证 / 手机号等证件字段)用<b>你设置的口令</b>加密成一份文件,可存 U 盘或传来换机。密钥只在本机由口令派生,<b>平台与云端都看不到明文</b>;口令遗忘则无法恢复。</p>
+        <button class="mini primary" data-act="backupex">导出加密备份</button>
+        <button class="mini" data-act="backupim">导入加密备份</button>
+        <input type="file" id="importEncFile" accept=".json,application/json" hidden>
       </aside>
     </div>
   </section>
 
 </main>
+
+<div id="encModal" class="enc-modal" hidden>
+  <div class="enc-box">
+    <div class="enc-title" id="encTitle">加密备份</div>
+    <p class="enc-tip" id="encTip"></p>
+    <input type="password" id="encPass" class="enc-in" placeholder="备份口令" autocomplete="off">
+    <input type="password" id="encPass2" class="enc-in" placeholder="再次输入口令(确认)" autocomplete="off" hidden>
+    <div class="enc-acts">
+      <button class="mini" data-act="enc-cancel">取消</button>
+      <button class="mini primary" data-act="enc-ok">确定</button>
+    </div>
+    <p class="enc-warn" id="encWarn"></p>
+  </div>
+</div>
 
 <footer>
   <b>关于这个版本</b><br>
@@ -169,6 +189,7 @@
 <!-- WorkBuddy Cloud SDK(CDN,@dev 通道)。加载失败不影响本地功能:Cloud 自动降级 -->
 <script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"></script>
 <script src="assets/engine.js"></script>
+<script src="assets/crypto.js"></script>
 <script src="assets/store.js"></script>
 <script src="assets/auth.js"></script>
 <script src="assets/cloud.js"></script>

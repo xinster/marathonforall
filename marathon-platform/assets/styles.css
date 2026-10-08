@@ -219,6 +219,16 @@ hr{border:0;border-top:1px solid var(--bd);margin:14px 0}
 /* 账号弹层:云端同步区块 */
 .acct-cloud{margin-top:14px;padding-top:14px;border-top:1px dashed var(--bd)}
 .acct-cloud.off{opacity:.72}
+
+/* 加密备份口令模态 */
+.enc-modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
+.enc-modal[hidden]{display:none}
+.enc-box{background:var(--panel);border:1px solid var(--bd);border-radius:16px;padding:22px;max-width:380px;width:100%;box-shadow:0 18px 50px rgba(0,0,0,.28)}
+.enc-title{font-size:17px;font-weight:700;margin-bottom:8px}
+.enc-tip{font-size:13px;color:var(--mut);line-height:1.6;margin:0 0 14px}
+.enc-in{width:100%;box-sizing:border-box;padding:10px 12px;margin-bottom:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--fg);font-size:14px}
+.enc-acts{display:flex;gap:10px;justify-content:flex-end;margin-top:6px}
+.enc-warn{color:#FF5A5A;font-size:13px;min-height:18px;margin:10px 0 0}
 .acct-sub{font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--tx3);margin-bottom:9px;text-transform:none}
 .cloud-status{font-size:13px;color:var(--tx2);margin-bottom:11px;display:flex;align-items:center;gap:7px}
 .cloud-status::before{content:"";width:7px;height:7px;border-radius:50%;background:#7A8794;flex:none}

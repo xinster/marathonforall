@@ -6,7 +6,7 @@
 #
 # 跑四件事:
 #   1. 语法检查(全部源码)
-#   2. 运行时回归(99 项断言,失败即非 0)
+#   2. 运行时回归(99 项断言) + 2b 加密备份守卫(密文不含明文 / 错误口令失败),失败即非 0
 #   3. 巡检冒烟(全新克隆下应回退到入库模板,退出码 0)
 #   4. 隐私守卫(含个人数据的文件不得被 git 跟踪)
 #
@@ -38,6 +38,7 @@ for f in \
   marathon-platform/assets/store.js \
   marathon-platform/assets/auth.js \
   marathon-platform/assets/cloud.js \
+  marathon-platform/assets/crypto.js \
   marathon-platform/assets/app.js \
   marathon-platform/assets/motion.js \
   tools/digest.js \
@@ -53,6 +54,14 @@ if "$NODE" tests/regression.js; then
   pass "回归通过"
 else
   bad "回归未通过"
+fi
+
+# ---------- 2b. 加密备份守卫 ----------
+section "2b. 加密备份守卫(密文不含明文 / 错误口令失败)"
+if "$NODE" tests/crypto.test.js; then
+  pass "crypto.test 通过"
+else
+  bad "crypto.test 未通过"
 fi
 
 # ---------- 3. 巡检冒烟 ----------

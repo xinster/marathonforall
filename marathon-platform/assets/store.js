@@ -226,6 +226,32 @@
     return state;
   }
 
+  /* ---------------- 加密备份(A 路线:本机资料跨设备带走) ----------------
+     把整份本机数据(含 profile 证件字段)用用户口令加密成一份文件。
+     密钥只由口令在本机派生,从不上传;密文文件落本机/U 盘都安全。 */
+
+  function exportEncrypted(pass) {
+    var payload = {
+      schema: SCHEMA,
+      exportedAt: new Date().toISOString(),
+      note: "马拉松跟踪台 · 加密备份。用导出时设置的口令解密,口令遗忘则无法恢复。",
+      state: state
+    };
+    return root.MCrypto.encryptText(JSON.stringify(payload), pass);
+  }
+
+  function importEncrypted(text, pass) {
+    return root.MCrypto.decryptText(JSON.parse(text), pass).then(function (plain) {
+      var payload = JSON.parse(plain);
+      if (!payload || !payload.state || typeof payload.state !== "object") {
+        throw new Error("备份内容缺失");
+      }
+      state = normalize(payload.state);
+      save();
+      return state;
+    });
+  }
+
   function stats() {
     var watched = watchedRaces();
     var now = new Date();
@@ -289,6 +315,7 @@
     checklistOf: checklistOf, toggleCheck: toggleCheck, checklistProgress: checklistProgress,
     addCustomRace: addCustomRace, removeCustomRace: removeCustomRace,
     toSyncBlob: toSyncBlob, applySyncBlob: applySyncBlob,
-    exportJSON: exportJSON, importJSON: importJSON, resetAll: resetAll, stats: stats
+    exportJSON: exportJSON, importJSON: importJSON, resetAll: resetAll, stats: stats,
+    exportEncrypted: exportEncrypted, importEncrypted: importEncrypted
   };
 })(typeof window !== "undefined" ? window : globalThis);

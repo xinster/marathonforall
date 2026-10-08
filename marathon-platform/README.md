@@ -247,6 +247,7 @@ notify_log     user_id / race_id / kind / channel / sentAt
 - 提醒页:四个通道、后端依赖标注、推送预览
 - 档案:33 字段(含 4 个越野字段)、完整度自查
 - 导出:ICS 结构闭合、JSON 备份可回读
+- 加密备份:口令(PBKDF2 + AES-GCM)加密整份本机数据(含证件字段)为文件带走;云端 `user_state` 仍不含证件(密钥只在本机派生,平台不可见)
 - 自建赛事:新增 / 默认 `kind=road` / 可标 `trail` / 出现在对应筛选里 / 删除
 - 持久化写入
 
