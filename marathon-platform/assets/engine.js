@@ -707,6 +707,20 @@ const URG_CLS = { pay:"u-red", drawdone:"u-amber", closing:"u-amber", open:"u-te
                   notopen:"u-grey", closed:"u-grey", done:"u-grey", skipped:"u-grey",
                   lost:"u-grey", racing:"u-teal" };
 
+/* 赛事库「报名中 / 已截止 / 所有」过滤用 —— 把 15 态归类为三种报名阶段。
+   分类必须由引擎驱动(红线 4),界面层只调用、不得自行判断状态属于哪一类。
+   - open   : 报名窗口仍在进行(含待缴费 / 待抽签 / 即将截止)
+   - closed : 报名窗口已关闭(含未中签 / 比赛中 / 已完赛 / 已跳过)
+   - other  : 尚未开放 / 待公布(soon / notopen / unknown / pending) —— 只在「所有」里出现
+   注:computeStatus 在 st==="lost" 时返回 key="closed"(标签「未中签」),所以这里按真实 s.key 覆盖全态即可。 */
+const PHASE_OPEN   = ["open", "opendeadline", "pay", "drawdone", "closing", "waitdraw"];
+const PHASE_CLOSED = ["closed", "lost", "racing", "done", "skipped"];
+function phaseOf(key) {
+  if (PHASE_OPEN.indexOf(key) >= 0) return "open";
+  if (PHASE_CLOSED.indexOf(key) >= 0) return "closed";
+  return "other";
+}
+
 const EMPTY_PROFILE = {
   name:"", nameEn:"", gender:"", birth:"", idType:"身份证", idNo:"", phone:"", email:"",
   city:"", country:"中国", blood:"", shirt:"", shoe:"", travel:"愿意",
@@ -957,7 +971,7 @@ return {
   MS_DAY, parseDT, mid, dayDiff, fmtDate, fmtMd, WD, weekday, esc,
   SEED_RACES, SEED_TRAIL, SEED_ALL, KIND_LABEL, kindOf,
   buildChecklist, MODE_LABEL, MODE_TIP,
-  computeStatus, URG_CLS, EMPTY_PROFILE, ageFromBirth, profileWarnings, maxDistKm,
+  computeStatus, phaseOf, URG_CLS, EMPTY_PROFILE, ageFromBirth, profileWarnings, maxDistKm,
   parseHMS, profileBlock, icsEscape, icsStamp, icsDate, buildICS,
   mergeStates
 };

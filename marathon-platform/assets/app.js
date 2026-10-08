@@ -57,7 +57,7 @@
   };
 
   var tab = "dash";
-  var lib = { q: "", kind: "", region: "", month: "", mode: "", onlyWatch: false };
+  var lib = { q: "", kind: "", region: "", month: "", mode: "", onlyWatch: false, phase: "all" };
   var mine = { kind: "" };
 
   /* ---------------------------------------------------------------- 基础 */
@@ -340,7 +340,7 @@
 
   /* ========================================================== 赛事库 */
 
-  function filteredCatalog() {
+  function catalogBase() {
     var q = lib.q.trim().toLowerCase();
     return S.allRaces().filter(function (r) {
       if (lib.kind && ME.kindOf(r) !== lib.kind) return false;
@@ -364,7 +364,34 @@
     });
   }
 
+  /* 报名阶段过滤:按引擎 ME.phaseOf 归类(红线 4 —— 分类必须由引擎驱动)。
+     phase="all" 即不过滤;open=报名中;closed=已截止。 */
+  function filteredCatalog() {
+    var base = catalogBase();
+    if (lib.phase && lib.phase !== "all") {
+      return base.filter(function (r) { return ME.phaseOf(catalogStatus(r).key) === lib.phase; });
+    }
+    return base;
+  }
+
+  /* 赛事库阶段切换条:全部 / 报名中 / 已截止(数字跟随其它筛选条件实时变化) */
+  function phaseTabsHTML(cur, cnt) {
+    var items = [["all", "全部", cnt.open + cnt.closed + cnt.other],
+                 ["open", "报名中", cnt.open],
+                 ["closed", "已截止", cnt.closed]];
+    return items.map(function (it) {
+      var on = cur === it[0];
+      return '<button type="button" class="lib-pbtn' + (on ? " on" : "") + '" data-act="libphase" data-id="' + it[0] + '">' +
+        esc(it[1]) + '<span class="n">' + it[2] + '</span></button>';
+    }).join("");
+  }
+
   function renderLib() {
+    var base = catalogBase();
+    var cnt = { open: 0, closed: 0, other: 0 };
+    base.forEach(function (r) { cnt[ME.phaseOf(catalogStatus(r).key)]++; });
+    $("#libPhase").innerHTML = phaseTabsHTML(lib.phase, cnt);
+
     var list = filteredCatalog();
     $("#libCount").textContent = "共 " + list.length + " 场";
 
@@ -1024,6 +1051,7 @@
     switch (act) {
       case "close": hideModal(); break;
       case "kindfilter": lib.kind = id || ""; renderLib(); break;
+      case "libphase": lib.phase = id || "all"; renderLib(); break;
       case "minekind": mine.kind = id || ""; renderMine(); break;
       case "detail": openDetail(id); break;
       case "check": openChecklist(id); break;

@@ -674,3 +674,42 @@ P0 阶段曾把云手动取消,这次重新 `activate` 时**故意复用同一�
 - P2 服务端:把单表拆成 `watchlist`/`checklists`/`profiles` 等多表,巡检迁服务端才能「不开机也收邮件」
 - 登录方式:手机/邮箱 OTP 已接,微信扫码需 `oauthRelayBaseUrl`(已传);**Auth Provider 开关若云端当前关闭,需在云管理面板开启** —— 这是上线前需用户确认的一步
 - 证件是否上云:本阶段**默认不同步**;AUTH_DESIGN 建议仅显式勾选才同步且界面标注
+
+---
+
+## 17. 阶段十三:赛事库「报名中 / 已截止 / 所有」过滤(10-08 18:55,本阶段)
+
+用户要求在浏览赛事库时加三个过滤条件:**报名中 / 已截止 / 所有**。
+
+### 设计(守两条红线)
+
+- **红线 4(分类必须由引擎驱动)**:过滤归类不写在界面,而是在 `engine.js` 新增纯函数 `ME.phaseOf(key)`,
+  把 15 态归为三类:`open`(报名中:open/opendeadline/pay/drawdone/closing/waitdraw)、
+  `closed`(已截止:closed/lost/racing/done/skipped)、`other`(待公布:soon/notopen/unknown/pending,只在「所有」出现)。
+  界面只调 `ME.phaseOf(catalogStatus(r).key)`,不自行判断。
+- **红线 5(类名不得更名 / 不新增独立事件绑定)**:过滤按钮用新类名 `.lib-pbtn`(避开被回归计数的 `kt`/`lib-card` 等前缀),
+  走全局点击代理 `data-act="libphase"`,不另绑事件。视觉复刻 `.kt` 的胶囊 + 激活态,纯 CSS。
+
+### 改动清单
+
+| 文件 | 改动 |
+|---|---|
+| `assets/engine.js` | 新增 `PHASE_OPEN` / `PHASE_CLOSED` / `ME.phaseOf(key)`,并导出到返回对象 |
+| `assets/app.js` | `lib.phase` 状态(默认 `all`);`filteredCatalog()` 拆出 `catalogBase()`(不含阶段过滤),阶段过滤在末端套用;`phaseTabsHTML(cur,cnt)` 渲染三按钮(数字跟随类型/地区/赛制/搜索实时变化);`renderLib()` 先算各阶段计数再填 `#libPhase`;点击代理加 `case "libphase"` |
+| `index.html` | 赛事库 `#kindTabs` 下新增 `<div id="libPhase" class="lib-phase">` |
+| `assets/styles.css` | 新增 `.lib-phase` / `.lib-pbtn`(`.on` 激活态 + 底部跑道高亮),不碰被计数的类名 |
+| `tests/regression.js` | 新增 3 条 `ME.phaseOf` 断言(open/closed/other 三类覆盖),**守护「分类必须由引擎驱动」**,防止以后有人把判断挪回界面 |
+
+### 验证
+
+- `node tests/regression.js` → **99 通过 / 0 失败**(较 §16 的 96 新增 3 条 phaseOf 断言)
+- `sh scripts/check.sh` → 四段全绿(语法 / 回归 / 巡检冒烟 / 隐私守卫)
+- 线上 `curl` 复核 `index.html` 含 `id="libPhase"`(待重新发布后生效)
+
+### 这一步的取舍
+
+「所有」是 catch-all:soon / notopen / unknown / pending 这四类「未开放 / 待公布」的赛事**只在「所有」里出现**,
+不在「报名中」也不在「已截止」—— 它们既没开也没关,归到任一边都会误导。越野赛大量处于「窗口未公布」,
+这样它们不会在「报名中」里被误标成可报。
+
+

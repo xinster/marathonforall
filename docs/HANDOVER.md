@@ -45,7 +45,7 @@ open marathon-platform/index.html
 # 3. 跑一次巡检(只生成摘要,不发信)
 node tools/digest.js
 
-# 4. 跑测试 —— 应输出 "96 通过 / 0 失败"
+# 4. 跑测试 —— 应输出 "99 通过 / 0 失败"
 node tests/regression.js
 
 # 5. 一键自检(语法 + 回归 + 巡检冒烟 + 隐私守卫)
@@ -117,7 +117,7 @@ marathon-platform/           ★ 产品,线上部署目录
 tools/
   digest.js                  每日巡检:算状态 → Markdown / HTML 邮件 / 紧急清单
   notify.js                  巡检 + 推送(有紧急项才发信;需外部发信 CLI)
-tests/regression.js          96 项断言,任意克隆可跑
+tests/regression.js          99 项断言,任意克隆可跑
 data/
   marathon_watchlist.example.json   入库模板(无个人数据)
   marathon_watchlist.json           活的关注清单 —— 已 gitignore,含个人档案
@@ -336,7 +336,7 @@ git add -A && git commit -m "..." && git push     # 没有凭据助手时会询�
 
 - [x] **`LICENSE` 已定:保留所有权利(非开源)** —— 见仓库根 `LICENSE`。
       将来若要开源,只需替换该文件并删掉 README「许可」一节中的限制说明
-- [x] **一键自检已加** —— `sh scripts/check.sh`:语法 + 96 项断言 + 巡检冒烟 + 隐私守卫
+- [x] **一键自检已加** —— `sh scripts/check.sh`:语法 + 99 项断言 + 巡检冒烟 + 隐私守卫
 - [ ] **(可选)接 GitHub Actions** —— 想让 push 时自动跑同批检查的话,
       需要带 `workflow` 权限的令牌(只有 `repo` 会被 GitHub 拒收)。
       脚本 `scripts/check.sh` 已经就绪,套一层 workflow 即可
@@ -364,7 +364,7 @@ git add -A && git commit -m "..." && git push     # 没有凭据助手时会询�
 接手后跑一遍,全绿就算环境没问题:
 
 ```bash
-node tests/regression.js                      # 期望:96 通过 / 0 失败
+node tests/regression.js                      # 期望:99 通过 / 0 失败
 node tools/digest.js                          # 期望:退出码 0,reports/ 下三个文件
 node tools/digest.js --date 2026-10-07T17:30  # 指定日期+时刻,便于复现
 cp data/marathon_watchlist.example.json data/marathon_watchlist.json   # 首次才需要
@@ -379,7 +379,7 @@ cp data/marathon_watchlist.example.json data/marathon_watchlist.json   # 首次�
 
 | 检查项 | 期望 |
 |---|---|
-| `node tests/regression.js` | `96 通过 / 0 失败` |
+| `node tests/regression.js` | `99 通过 / 0 失败` |
 | `tools/digest.js` 退出码 | `0` |
 | 两个数据文件都缺失时 | 退出码 `4` + 明确指引 |
 | 只有模板时(新克隆的默认状态) | 退出码 `0` + 一条告警 |

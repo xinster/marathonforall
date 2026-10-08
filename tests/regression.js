@@ -102,6 +102,14 @@ ok("SEED_ALL = 路跑 + 越野 = 60", ME.SEED_ALL.length === 60, ME.SEED_ALL.len
 ok("kindOf 正确区分", ME.kindOf(T[0]) === "trail" && ME.kindOf(ME.SEED_RACES[0]) === "road");
 ok("KIND_LABEL 已定义", ME.KIND_LABEL.trail === "越野赛" && ME.KIND_LABEL.road === "马拉松 / 路跑");
 
+/* --- ME.phaseOf: 赛事库「报名中 / 已截止」过滤的分类必须由引擎驱动 --- */
+ok("phaseOf · 报名中覆盖 open/opendeadline/pay/drawdone/closing/waitdraw",
+  ["open","opendeadline","pay","drawdone","closing","waitdraw"].every(k => ME.phaseOf(k) === "open"));
+ok("phaseOf · 已截止覆盖 closed/lost/racing/done/skipped",
+  ["closed","lost","racing","done","skipped"].every(k => ME.phaseOf(k) === "closed"));
+ok("phaseOf · 待公布归 other(soon/notopen/unknown/pending 只在「所有」出现)",
+  ["soon","notopen","unknown","pending"].every(k => ME.phaseOf(k) === "other"));
+
 const allIds = ME.SEED_ALL.map(r => r.id);
 ok("无重复 id", new Set(allIds).size === allIds.length,
   allIds.filter((x, i) => allIds.indexOf(x) !== i).join(","));
