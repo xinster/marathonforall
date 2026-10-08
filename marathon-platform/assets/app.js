@@ -312,6 +312,8 @@
     marks.push(ME.MODE_LABEL[r.mode] || r.mode);
     if (r.custom) marks.push("自建");
     var kind = ME.kindOf(r);
+    /* 任务5 站点侧:报名窗口未公布的赛事打「待公布」标签(引擎驱动,见 ME.isWindowPending) */
+    var pendTag = ME.isWindowPending(s.key) ? '<i class="r-pend">待公布</i>' : "";
 
     return '<article class="race ' + (ME.URG_CLS[s.key] || "u-grey") + '">' +
       '<div class="r-head">' +
@@ -325,7 +327,7 @@
       '</div>' +
       (r.dist ? '<div class="lc-dist">' + esc(r.dist) + '</div>' : '') +
       '<div class="r-tags"><i class="k-tag k-' + kind + '">' + esc(ME.KIND_LABEL[kind]) + '</i>' +
-        marks.map(function (m) { return '<i>' + esc(m) + '</i>'; }).join("") + '</div>' +
+        marks.map(function (m) { return '<i>' + esc(m) + '</i>'; }).join("") + pendTag + '</div>' +
       (s.note ? '<p class="r-note">' + s.note + '</p>' : '') +
       (x.warn && x.warn.length ? '<p class="r-warn">材料提醒:' + esc(x.warn[0]) + (x.warn.length > 1 ? " 等 " + x.warn.length + " 项" : "") + '</p>' : '') +
       '<div class="r-prog"><div class="bar"><i style="width:' + x.prog.pct + '%"></i></div>' +
@@ -783,9 +785,10 @@
   function doOpen(id) {
     var r = S.raceById(id); if (!r) return;
     window.open(r.url, "_blank", "noopener");
+    /* C+ 报名预填辅助:点「去官网报名」即复制资料 + 跳官网,带去粘贴即可 */
+    copyText(ME.profileBlock(r, S.state.profile), "已打开官网,报名资料已复制,直接粘贴即可");
     var w = ME.profileWarnings(r, S.state.profile);
-    if (w.length) toast("已打开官网。注意:" + w[0]);
-    else { copyText(ME.profileBlock(r, S.state.profile), "已打开官网,报名资料已复制,直接粘贴即可"); }
+    if (w.length) toast("注意:" + w[0]);
   }
 
   function openChecklist(id) {
@@ -952,6 +955,10 @@
           '<input class="acct-in" id="cloudEmailPwd" type="password" maxlength="60" placeholder="设置密码(新账号必填)" style="display:none">' +
           '<button class="mini primary" type="button" data-act="cloud-verify-email">登录 / 注册</button>' +
         '</div>' +
+        '<div class="cloud-wechat">' +
+          '<button class="mini wechat-btn" type="button" data-act="cloud-wechat">微信扫码登录</button>' +
+          '<p class="m-tip">微信扫码后,关注清单与设置同样跨设备同步。需云端已配置微信登录(redirect 白名单含本站点)。</p>' +
+        '</div>' +
       '</div>' +
       '<div id="cloudOn" style="display:none">' +
         '<div class="acct-row"><span>云端账号</span><b id="cloudWho">—</b></div>' +
@@ -1079,6 +1086,14 @@
       lastSyncAt = null; refreshCloudUI(); renderAcctChip(); toast("已退出云端(本地数据保留)");
     });
   }
+  /* 微信扫码登录:调 SDK 的 OAuth relay 跳转,浏览器会被重定向到微信确认页,
+     用户确认后 relay 带 code 跳回本页,由启动段的 handleOAuthReturn 完成会话。 */
+  function cloudWechat() {
+    if (!Cloud.isReady()) { toast("云服务未连接"); return; }
+    Cloud.wechatLogin(location.href).then(function (r) {
+      if (r && r.error) toast("微信登录发起失败:" + (r.error.message || r.error.kind));
+    });
+  }
 
   function render() {
     $$(".nav button").forEach(function (b) { b.classList.toggle("on", b.dataset.tab === tab); });
@@ -1163,6 +1178,7 @@
       case "cloud-verify-email": cloudVerifyEmail(); break;
       case "cloud-sync": doSync(); break;
       case "cloud-out": cloudOut(); break;
+      case "cloud-wechat": cloudWechat(); break;
       case "backup": download("marathon-backup-" + stamp() + ".json", S.exportJSON(), "application/json"); break;
       case "reset":
         if (confirm("清空全部本地数据(档案、关注、材料勾选)?\n此操作不可恢复,建议先导出备份。")) {
@@ -1336,6 +1352,22 @@
   } else {
     setSyncDot("off");
   }
+
+  /* 微信扫码登录回调:relay 带 code 跳回本页时,完成会话并清掉 URL 里的临时参数。
+     依赖云端已配置微信 OAuth(redirect 白名单含本站点域名)。 */
+  (function handleOAuthReturn() {
+    if (!Cloud.isReady()) return;
+    try {
+      var q = new URLSearchParams(location.search);
+      if ((q.get("provider") === "wechat" || q.get("provider_id")) && q.get("code")) {
+        Cloud.handleOAuthCallback().then(function (r) {
+          if (r && r.error) toast("微信登录失败:" + (r.error.message || r.error.kind));
+          else toast("微信登录成功,正在同步…");
+          history.replaceState({}, "", location.pathname);
+        });
+      }
+    } catch (e) { /* 非 OAuth 返回,忽略 */ }
+  })();
 
   render();
   fireDue();

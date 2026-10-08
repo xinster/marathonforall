@@ -65,6 +65,22 @@
     if (!ready || !cloud.auth.onAuthStateChange) return function () {};
     return cloud.auth.onAuthStateChange(function (event, session) { cb(event, session); });
   }
+  /* 微信扫码登录:走 OAuth relay 跳转(纯静态站可用,无需微信内 code)。
+     依赖云端已配置微信 OAuth(redirect 白名单含本站点域名)。 */
+  function wechatLogin(redirectTo) {
+    if (!ready) return Promise.resolve({ error: { kind: "offline" } });
+    try {
+      return call(cloud.auth.signInWithOAuth({ provider: "wechat", redirectTo: redirectTo || root.location.href }));
+    } catch (e) { return Promise.resolve({ error: { kind: "wechat_failed", message: e.message } }); }
+  }
+  /* relay 跳回本页后,完成会话。 */
+  function handleOAuthCallback() {
+    if (!ready || !cloud.auth.handleOAuthCallback) return Promise.resolve({ error: { kind: "no_handler" } });
+    return call(cloud.auth.handleOAuthCallback()).then(function (r) {
+      if (r.error) return { error: r.error };
+      return { data: r.data || true };
+    });
+  }
   /* 脱敏:界面只显示账号尾号,不暴露邮箱/手机明文 */
   function maskIdentity(session) {
     if (!session || !session.user) return null;
@@ -122,6 +138,7 @@
     PC: PC, init: init, isReady: isReady,
     sendOtp: sendOtp, verifyOtp: verifyOtp, signOut: signOut,
     getSession: getSession, onAuthStateChange: onAuthStateChange, maskIdentity: maskIdentity,
+    wechatLogin: wechatLogin, handleOAuthCallback: handleOAuthCallback,
     pull: pull, push: push
   };
 })(typeof window !== "undefined" ? window : globalThis);

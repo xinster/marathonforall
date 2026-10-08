@@ -67,6 +67,7 @@ const dayDiff        = ME.dayDiff;
 const MS_DAY         = ME.MS_DAY;
 const kindOf         = ME.kindOf;
 const KIND_LABEL     = ME.KIND_LABEL;
+const phaseOf        = ME.phaseOf;
 
 /* ---------- 2. 读数据 + 合并目录 ---------- */
 if (!fs.existsSync(DATA)) {
@@ -185,6 +186,9 @@ const waiting   = all.filter(x => x.statusKey === "waitdraw" || x.statusKey === 
 const upcoming  = all.filter(x => x.statusKey === "notopen");
 const racing    = all.filter(x => x.statusKey === "racing");
 const unknown   = all.filter(x => x.statusKey === "unknown");
+/* 「待公布」= phaseOf 归为 "other" 的赛事(soon / notopen / unknown / pending):
+   报名窗口既没开放也没截止、官方未给出明确时间 —— 在概览里单独成组提示,避免被淹没。 */
+const windowPending = all.filter(x => phaseOf(x.statusKey) === "other");
 
 /* 「紧急」= 有明确时间窗、错过就没了的事件。故意不含 opendeadline:
    未设截止日的窗口会长期挂着(有的已开放数月),若也计入紧急,邮件将永远
@@ -297,6 +301,7 @@ grp("待抽签 / 待结果", waiting, x => tag(x) + x.name + (x.cd != null ? "("
 grp("未开放", upcoming, x => tag(x) + x.name + "(" + (x.cd != null ? rel(x, "开放") : "待定") + ")");
 grp("已锁定待比赛", racing, x => tag(x) + x.name + "(" + x.daysToRace + " 天后比赛)");
 grp("窗口未记录", unknown, x => tag(x) + x.name + "(" + (x.daysToRace != null ? x.daysToRace + " 天后比赛" : "日期待定") + ")");
+grp("待公布(未开放/待定/未知)", windowPending, x => tag(x) + x.name + (x.cd != null ? "(" + rel(x, "开放") + ")" : "(窗口未公布)"));
 md.push("");
 md.push("**分类统计:**路跑 " + roadAll.length + " 场(报名中 " +
   roadAll.filter(x => x.statusKey === "open" || x.statusKey === "opendeadline").length + ") · 越野赛 " +
@@ -443,7 +448,8 @@ ehtml.push('<table style="width:100%;border-collapse:collapse;font-size:13px">')
  ["报名中·未设截止日", noDeadline, x => (x.kind === "trail" ? "[越] " : "") + x.name + " · 售罄即止"],
  ["待抽签", waiting, x => (x.kind === "trail" ? "[越] " : "") + x.name + (x.cd != null ? " · " + rel(x, "公布") : "")],
  ["未开放", upcoming, x => (x.kind === "trail" ? "[越] " : "") + x.name + (x.cd != null ? " · " + rel(x, "开放") : "")],
- ["已锁定待比赛", racing, x => (x.kind === "trail" ? "[越] " : "") + x.name + " · " + x.daysToRace + " 天后比赛"]].forEach(g => {
+ ["已锁定待比赛", racing, x => (x.kind === "trail" ? "[越] " : "") + x.name + " · " + x.daysToRace + " 天后比赛"],
+ ["待公布", windowPending, x => (x.kind === "trail" ? "[越] " : "") + x.name + (x.cd != null ? " · " + rel(x, "开放") : " · 窗口未公布")]].forEach(g => {
   if (!g[1].length) return;
   ehtml.push('<tr><td style="padding:8px 0;color:#5c6b6a;white-space:nowrap;vertical-align:top;width:96px">' + g[0] + '</td>'
     + '<td style="padding:8px 0;color:#14201f">' + E(g[1].map(g[2]).join(" ｜ ")) + '</td></tr>');
@@ -500,7 +506,8 @@ console.log("");
 console.log("覆盖: 路跑 " + roadAll.length + " 场 · 越野赛 " + trailAll.length + " 场");
 console.log("窗口动态: 报名中 " + inWindow.length + " · 未设截止日 " + noDeadline.length +
             " · 待抽签 " + waiting.length + " · 未开放 " + upcoming.length +
-            " · 已锁定 " + racing.length + " · 窗口未记录 " + unknown.length);
+            " · 已锁定 " + racing.length + " · 窗口未记录 " + unknown.length +
+            " · 待公布 " + windowPending.length);
 if (R.profileIssues.length) console.log("档案待补齐: " + R.profileIssues.join("、"));
 console.log("");
 console.log("已写出:");

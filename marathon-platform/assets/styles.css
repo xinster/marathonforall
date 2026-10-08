@@ -910,6 +910,14 @@ footer code{
 
 /* ============================================================ 响应式 */
 
+/* 待公布标签 + 微信登录按钮(新增,均非被计数类名) */
+.r-pend{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;
+  background:#fff6e5;color:#b06a00;border:1px solid #f0d9a8;margin-left:4px}
+.cloud-wechat{margin-top:10px;padding-top:10px;border-top:1px dashed var(--bd)}
+.cloud-wechat .m-tip{margin:6px 0 0}
+.wechat-btn{background:#07c160;color:#fff;border-color:#07c160;font-weight:600}
+.wechat-btn:hover{border-color:#06ad56;background:#06ad56}
+
 @media(max-width:900px){
   .cols{grid-template-columns:1fr}
   .m-cols{grid-template-columns:1fr;gap:14px}
@@ -926,6 +934,32 @@ footer code{
   .hero .sub{font-size:12.5px}
   .runner{width:88px;animation-duration:8.5s}
   .nav button.on::after{left:8px;right:8px}
+  /* 移动端抛光:放大触控目标、表单与按钮换行、弹窗适配窄屏 */
+  .mini{min-height:38px;display:inline-flex;align-items:center;justify-content:center}
+  .lib-pbtn{min-height:34px;padding:6px 12px}
+  .lib-pbtn .n{margin-left:5px}
+  .kind-tabs,.lib-phase{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .r-tags{flex-wrap:wrap;gap:5px}
+  .r-acts{display:flex;flex-wrap:wrap;gap:8px}
+  .r-acts .mini{flex:1 1 auto;min-width:88px}
+  .cloud-form{display:flex;flex-direction:column;gap:8px}
+  .cloud-form .acct-in{width:100%}
+  .cloud-form .mini{width:100%}
+  .acct-tabs{flex-wrap:wrap;gap:6px}
+  .enc-box{max-width:94vw;padding:18px}
+  .enc-box input{width:100%}
+}
+
+@media(max-width:560px){
+  .topbar{padding:8px 10px}
+  .clock{font-size:12px;margin-left:0}
+  .nav button{padding:7px 10px;font-size:13px}
+  .race{padding:14px 13px 16px}
+  .r-name{font-size:15px}
+  .r-acts .mini{flex:1 1 46%}
+  .lib-pbtn{flex:1 1 auto;text-align:center}
+  .m-head h3{font-size:16px}
+  main{padding:14px 10px 64px}
 }
 
 /* ============================================================ 降级 */

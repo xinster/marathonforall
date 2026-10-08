@@ -37,7 +37,7 @@
 │   ├── digest.js                 每日巡检:算窗口状态 → 生成 Markdown / HTML 邮件 / 紧急清单
 │   └── notify.js                 巡检 + 推送(有紧急项才发信)
 ├── tests/
-│   └── regression.js             99 项断言,任意克隆可直接跑
+│   └── regression.js             104 项断言,任意克隆可直接跑
 ├── data/
 │   ├── marathon_watchlist.example.json  入库模板(不含个人数据)
 │   └── marathon_watchlist.json          你的关注清单 —— 已 gitignore,自行创建
@@ -75,7 +75,7 @@ node tools/notify.js
 node tools/notify.js --dry-run     # 只打印,不真发
 node tools/notify.js --force       # 无紧急事项也发
 
-# 5. 测试(零依赖,期望 "99 通过 / 0 失败")
+# 5. 测试(零依赖,期望 "104 通过 / 0 失败")
 node tests/regression.js
 
 # 6. 一键自检(语法 + 回归 + 巡检冒烟 + 隐私守卫,四合一)

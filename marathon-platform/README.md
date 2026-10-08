@@ -224,7 +224,7 @@ notify_log     user_id / race_id / kind / channel / sentAt
 
 ## 已验证的行为
 
-在 Node 下用 DOM 存根跑了完整的运行时回归,共 **99 项断言全部通过**(`node tests/regression.js`),覆盖:
+在 Node 下用 DOM 存根跑了完整的运行时回归,共 **104 项断言全部通过**(`node tests/regression.js`),覆盖:
 
 - **引擎防漂移**:路跑 1152 组对照无真实漂移;原 24 场 id 与顺序完全一致
 - **越野数据完整性**:36 场全部有官网 / 组别距离 / 备注 / 比赛日;无重复 id;覆盖 5 大洲;

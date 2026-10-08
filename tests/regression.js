@@ -109,6 +109,19 @@ ok("phaseOf · 已截止覆盖 closed/lost/racing/done/skipped",
   ["closed","lost","racing","done","skipped"].every(k => ME.phaseOf(k) === "closed"));
 ok("phaseOf · 待公布归 other(soon/notopen/unknown/pending 只在「所有」出现)",
   ["soon","notopen","unknown","pending"].every(k => ME.phaseOf(k) === "other"));
+/* isWindowPending 是 phaseOf 的语义化封装,站点「待公布」标签与邮件概览都靠它 */
+ok("isWindowPending · 四类待公布状态返回 true",
+  ["soon","notopen","unknown","pending"].every(k => ME.isWindowPending(k) === true));
+ok("isWindowPending · 报名中/已截止返回 false",
+  ["open","opendeadline","closed","lost"].every(k => ME.isWindowPending(k) === false));
+/* trailGearList:越野强制装备按距离分级,纯函数可回归 */
+var tgShort = ME.trailGearList({ kind:"trail", dist:"MTC 50K" });
+var tgLong = ME.trailGearList({ kind:"trail", dist:"UTMB 171K" });
+ok("trailGearList · 基础装备齐全(头灯/救生毯/冲锋衣/水袋)",
+  ["头灯","救生毯","冲锋衣","水袋"].every(function (g) { return tgShort.some(function (x) { return x.indexOf(g) >= 0; }); }));
+ok("trailGearList · 100K+ 追加登山杖",
+  tgLong.some(function (x) { return x.indexOf("登山杖") >= 0; }) && !tgShort.some(function (x) { return x.indexOf("登山杖") >= 0; }));
+ok("trailGearList · 路跑不调用(仅越野用)", typeof ME.trailGearList({ kind:"road", dist:"全马 42K" }) === "object");
 
 const allIds = ME.SEED_ALL.map(r => r.id);
 ok("无重复 id", new Set(allIds).size === allIds.length,

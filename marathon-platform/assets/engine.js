@@ -721,6 +721,11 @@ function phaseOf(key) {
   return "other";
 }
 
+/* 报名窗口「尚未公布 / 未开放 / 待定」的赛事:phaseOf 归为 "other"。
+   即 soon / notopen / unknown / pending 这四类 —— 它们既没开放也没截止,
+   不宜归进「报名中」或「已截止」,在赛事库与每日摘要里单独提示「待公布」。 */
+function isWindowPending(key) { return phaseOf(key) === "other"; }
+
 const EMPTY_PROFILE = {
   name:"", nameEn:"", gender:"", birth:"", idType:"身份证", idNo:"", phone:"", email:"",
   city:"", country:"中国", blood:"", shirt:"", shoe:"", travel:"愿意",
@@ -751,6 +756,27 @@ function maxDistKm(race){
   const mi = s.match(/(\d{2,3})\s*英里/);
   if(mi) return Math.round(parseInt(mi[1], 10) * 1.609);
   return null;
+}
+
+/* 越野赛强制装备清单:按最长组别距离分级。返回字符串数组。
+   赛前逐项核对,缺一件即取消资格 —— 用于「报名预填辅助」自动附在资料后面,
+   也供详情页材料清单参考。不读写任何状态,纯函数。 */
+function trailGearList(race) {
+  const km = maxDistKm(race);
+  const gear = [
+    "头灯 + 备用电池",
+    "救生毯",
+    "防水透气冲锋衣(硬壳)",
+    "哨子",
+    "水袋(总容量 1–2L)",
+    "备用口粮(能量胶 / 能量棒)",
+    "手机(保持开机、存好紧急联系人)",
+    "急救绷带",
+    "保温层(备用衣物)"
+  ];
+  if (km && km >= 50) gear.push("可核验的强制装备认证(UTMB 系列赛要求)");
+  if (km && km >= 100) gear.push("登山杖(夜间行进支撑)", "额外备用光源", "防风手套");
+  return gear;
 }
 
 function profileWarnings(race, profile){
@@ -864,6 +890,12 @@ function profileBlock(race, profile){
   if(p.medDate) L.push("最近体检日期:" + p.medDate);
   if(p.notes) L.push("备注:" + p.notes);
   L.push("");
+  if(race && race.kind === "trail"){
+    var gkm = maxDistKm(race);
+    L.push("【越野赛·强制装备清单】(按最长组别 " + (gkm ? gkm + "K" : "未知距离") + " 自动列出,赛前逐项核对,缺一件即取消资格)");
+    L.push(trailGearList(race).map(function(g,i){ return (i+1) + ". " + g; }).join("\n"));
+    L.push("");
+  }
   L.push("—— 报名后请回到「马拉松报名指挥中心」把该赛事状态改为「已提交报名」,系统会在抽签日和缴费截止日提醒你。");
   return L.filter(x => x !== "").join("\n");
 }
@@ -971,8 +1003,8 @@ return {
   MS_DAY, parseDT, mid, dayDiff, fmtDate, fmtMd, WD, weekday, esc,
   SEED_RACES, SEED_TRAIL, SEED_ALL, KIND_LABEL, kindOf,
   buildChecklist, MODE_LABEL, MODE_TIP,
-  computeStatus, phaseOf, URG_CLS, EMPTY_PROFILE, ageFromBirth, profileWarnings, maxDistKm,
-  parseHMS, profileBlock, icsEscape, icsStamp, icsDate, buildICS,
+  computeStatus, phaseOf, isWindowPending, URG_CLS, EMPTY_PROFILE, ageFromBirth, profileWarnings, maxDistKm,
+  trailGearList, parseHMS, profileBlock, icsEscape, icsStamp, icsDate, buildICS,
   mergeStates
 };
 });

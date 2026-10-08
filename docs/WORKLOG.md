@@ -762,4 +762,44 @@ P0 阶段曾把云手动取消,这次重新 `activate` 时**故意复用同一�
 - **D 路线(真·API 自动提交第三方)**:基本不可行(无稳定公开接口 / ToS / 验证码 / 支付),暂不做。
 - 当前「报名预填」是复制文本手动粘贴;若某些赛事官网支持「预填链接 / 表单回填参数」,可后续增强为生成带参 URL。
 
+---
+
+## §19 阶段十五:移动端抛光 + C+预填升级 + 微信登录 + 待公布提示(2026-10-08)
+
+> 用户拍板做 1、2、4、5(移动端 CSS 抛光 / C+ 报名预填升级 / 微信登录 / 待公布提示)。
+> 5 个回归断言(99→104),自检验证全绿。本地 commit 后等用户「发布」上线。
+
+### 改动清单
+
+| 文件 | 改动 |
+|---|---|
+| `assets/engine.js` | 新增纯函数 `isWindowPending(key)`(soon/notopen/unknown/pending 归「窗口待公布」)、`trailGearList(km)`(按距离给强制装备清单);`profileBlock` 在越野赛时追加强制装备段;return 导出两者 |
+| `assets/app.js` | `doOpen(id)` 先复制 `profileBlock` 文本再 `window.open(r.url)`(C+ 一键复制+跳官网);赛事卡加待公布标签 `.r-pend`(`pendTag` 辅助);`cloudSection` 加微信登录按钮 `data-act="cloud-wechat"` + `cloudWechat()`;启动块先 `Cloud.handleOAuthCallback()` 再 `Cloud.getSession()`;点击代理加 `case "cloud-wechat"` |
+| `assets/cloud.js` | 新增 `wechatAuth(redirectTo)`(走 `auth.signInWithOAuth({provider:"wechat",redirectTo})`)+ `handleOAuthCallback()`;均 `ready` 守卫;导出两者 |
+| `assets/styles.css` | 增强 `@media(max-width:900px)`(触控目标、`.lib-phase`/`.kind-tabs` 横滚、`.r-acts` 换行);新增 `@media(max-width:560px)`;加 `.r-pend` / `.wechat-btn` 基础样式 |
+| `tools/digest.js` | 复用 `ME.isWindowPending`;MD 概览 + 邮件 HTML + 控制台计数新增「窗口待公布」分组 |
+| `tests/regression.js` | +5 断言守 `isWindowPending` / `trailGearList`(99→104) |
+
+### 关键判定
+
+- **微信登录走 OAuth 中转(signInWithOAuth provider=wechat + handleOAuthCallback)**,适配静态站无后端场景;
+  依赖云端该应用的微信 OAuth 回调白名单(客户端无法验证,已备注待用户在云后台确认)。
+- **待公布提示不计入「紧急」(红线 2 不变)**:`isWindowPending` 只用于摘要/邮件的「窗口待公布」分组与站点标签,
+  不触发发信,避免天天为同一场长挂窗口报警。
+- **C+ 预填**:复制资料与跳官网解耦(`profileBlock` 先复制,窗口照常开),越野赛自动带强制装备清单,贴合越野三处本质差异。
+- 守红线 4/5:微信按钮与待公布标签均走全局点击代理 / 非计数类名,未新增独立事件绑定。
+
+### 验证
+
+- `node tests/regression.js` → **104 通过 / 0 失败**
+- `node tests/crypto.test.js` → **5 项全过**
+- `sh scripts/check.sh` → 全绿(语法 / 104 回归 / 5 加密守卫 / 巡检冒烟 / 隐私守卫)
+- 本地预览复核:`.r-pend` 标签、`cloud-wechat` 按钮、`isWindowPending` 分组均就位
+
+### 这一步后仍未做(等用户拍板)
+
+- **微信 OAuth 回调白名单**:需用户在云后台把本站域名加入该应用微信登录的 redirect 白名单,否则 `handleOAuthCallback` 拿不到 code。
+- B 路线(客户端加密同步上云)、D 路线(真·API 自动提交第三方)维持 §18 结论暂不做。
+- 移动端为 CSS 抛光,未引入新交互框架;若后续要 PWA/离线缓存可单列阶段。
+
 
